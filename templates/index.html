@@ -68,12 +68,12 @@
                         <thead class="table-dark">
                             <tr>
                                 <th onclick="sortTable('id')"># <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable('name')">후보자 이름 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('name')">이름 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('contact')">연락처 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('contact_date')">접촉일 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('manager')">추천인 <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable('status')">진행 상황 <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable('result')">최종 결과 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('status')">진행단계 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('result')">최종결과 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('memo')">메모 <i class="fas fa-sort sort-icon"></i></th>
                                 <th class="text-center">관리</th>
                             </tr>
@@ -100,7 +100,7 @@
                         <input type="hidden" id="candidateId">
 
                         <div class="mb-3">
-                            <label for="name" class="form-label">후보자 이름 <span class="text-danger">*</span></label>
+                            <label for="name" class="form-label">이름 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" required>
                         </div>
 
@@ -120,9 +120,9 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="status" class="form-label">진행 상황</label>
+                            <label for="status" class="form-label">진행단계</label>
                             <select class="form-select" id="status">
-                                <option value="포지션제안 수락">포지션제안 수락</option>
+                                <option value="포지션 수락">포지션 수락</option>
                                 <option value="잡페어 참석">잡페어 참석</option>
                                 <option value="TS 진행">TS 진행</option>
                                 <option value="교육 입과">교육 입과</option>
@@ -131,7 +131,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="result" class="form-label">최종 결과</label>
+                            <label for="result" class="form-label">최종결과</label>
                             <select class="form-select" id="result">
                                 <option value="진행 중">진행 중</option>
                                 <option value="등록">등록</option>
@@ -259,7 +259,7 @@
                     <td>${index + 1}</td>
                     <td class="fw-bold">${escapeHtml(c.name)}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.contact || '')}">${escapeHtml(c.contact || '')}</td>
-                    <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date || '')}</td>
+                    <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date ? c.contact_date.replace(/^20/, '') : '')}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.manager || '')}">${escapeHtml(c.manager || '')}</td>
                     <td class="ellipsis-medium" title="${escapeHtml(c.status || '')}">${escapeHtml(c.status || '')}</td>
                     <td><span class="badge ${badgeClass} badge-status" title="${escapeHtml(c.result || '')}">${escapeHtml(c.result || '')}</span></td>
@@ -288,7 +288,7 @@
             document.getElementById('contact').value = c.contact || '';
             document.getElementById('contact_date').value = c.contact_date || '';
             document.getElementById('manager').value = c.manager || '';
-            document.getElementById('status').value = c.status || '포지션제안 수락';
+            document.getElementById('status').value = c.status || '포지션 수락';
             document.getElementById('result').value = c.result || '진행 중';
             document.getElementById('memo').value = c.memo || '';
 

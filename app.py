@@ -42,12 +42,12 @@ def add_candidate():
     data = request.json
     name = data.get('name')
     if not name:
-        return jsonify({'error': '후보자 이름은 필수입니다.'}), 400
+        return jsonify({'error': '이름은 필수입니다.'}), 400
 
     contact = data.get('contact', '')
     contact_date = data.get('contact_date', '')
     manager = data.get('manager', '')
-    status = data.get('status', '포지션제안 수락')
+    status = data.get('status', '포지션 수락')
     result = data.get('result', '진행 중')
     memo = data.get('memo', '')
 

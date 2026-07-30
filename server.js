@@ -55,10 +55,10 @@ app.get('/api/candidates', (req, res) => {
 // Add candidate
 app.post('/api/candidates', (req, res) => {
   const { name, contact, contact_date, manager, status, result, memo } = req.body;
-  if (!name) {
-    res.status(400).json({ error: '후보자 이름은 필수입니다.' });
-    return;
-  }
+    if (!name) {
+      res.status(400).json({ error: '이름은 필수입니다.' });
+      return;
+    }
   const query = `INSERT INTO candidates (name, contact, contact_date, manager, status, result, memo) VALUES (?, ?, ?, ?, ?, ?, ?)`;
   const params = [name, contact, contact_date, manager, status, result, memo];
   
