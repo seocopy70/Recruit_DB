@@ -47,7 +47,7 @@ def add_candidate():
     contact = data.get('contact', '')
     contact_date = data.get('contact_date', '')
     manager = data.get('manager', '')
-    status = data.get('status', '1차 접촉')
+    status = data.get('status', '포지션제안 수락')
     result = data.get('result', '진행 중')
     memo = data.get('memo', '')
 
