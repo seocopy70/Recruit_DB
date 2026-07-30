@@ -13,6 +13,23 @@
         .navbar-brand { font-weight: bold; }
         .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
         .badge-status { font-size: 0.85rem; padding: 0.35em 0.65em; }
+        .table th { cursor: pointer; position: relative; user-select: none; }
+        .table th:hover { background-color: #f0f0f0; }
+        .table th .sort-icon { margin-left: 5px; opacity: 0.5; }
+        .table th.sorted-asc .sort-icon { opacity: 1; }
+        .table th.sorted-desc .sort-icon { opacity: 1; }
+        .table th.sorted-asc { background-color: #e9f7fe; }
+        .table th.sorted-desc { background-color: #e9f7fe; }
+        .ellipsis { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ellipsis-short { max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ellipsis-medium { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .table-responsive { min-height: 400px; }
+        @media (max-width: 768px) {
+            .table th, .table td { font-size: 0.85rem; padding: 0.5rem; }
+            .ellipsis { max-width: 100px; }
+            .ellipsis-short { max-width: 80px; }
+            .ellipsis-medium { max-width: 100px; }
+        }
     </style>
 </head>
 <body>
@@ -27,7 +44,7 @@
 
     <!-- Main Container -->
     <div class="container my-4">
-        
+
         <!-- Top Actions & Filters -->
         <div class="row mb-4 align-items-center">
             <div class="col-md-6 mb-2 mb-md-0">
@@ -50,14 +67,14 @@
                     <table class="table table-hover table-striped mb-0 align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th>#</th>
-                                <th>후보자 이름</th>
-                                <th>연락처</th>
-                                <th>접촉일</th>
-                                <th>추천인</th>
-                                <th>진행 상황</th>
-                                <th>최종 결과</th>
-                                <th>메모</th>
+                                <th onclick="sortTable('id')"># <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('name')">후보자 이름 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('contact')">연락처 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('contact_date')">접촉일 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('manager')">추천인 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('status')">진행 상황 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('result')">최종 결과 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('memo')">메모 <i class="fas fa-sort sort-icon"></i></th>
                                 <th class="text-center">관리</th>
                             </tr>
                         </thead>
@@ -81,27 +98,27 @@
                     </div>
                     <div class="modal-body">
                         <input type="hidden" id="candidateId">
-                        
+
                         <div class="mb-3">
                             <label for="name" class="form-label">후보자 이름 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" required>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="contact" class="form-label">연락처</label>
                             <input type="text" class="form-control" id="contact" placeholder="전화번호 또는 이메일">
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="contact_date" class="form-label">접촉일</label>
                             <input type="date" class="form-control" id="contact_date">
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="manager" class="form-label">추천인</label>
                             <input type="text" class="form-control" id="manager" placeholder="추천인 이름">
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="status" class="form-label">진행 상황</label>
                             <select class="form-select" id="status">
@@ -113,7 +130,7 @@
                                 <option value="보류/종료">보류/종료</option>
                             </select>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="result" class="form-label">최종 결과</label>
                             <select class="form-select" id="result">
@@ -122,7 +139,7 @@
                                 <option value="등록포기">등록포기</option>
                             </select>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="memo" class="form-label">메모</label>
                             <textarea class="form-control" id="memo" rows="3" placeholder="특이사항, 면접 피드백 등"></textarea>
@@ -142,6 +159,8 @@
     <script>
         let candidatesData = [];
         let modalInstance = null;
+        let currentSortColumn = 'contact_date';
+        let currentSortDirection = 'desc';
 
         document.addEventListener('DOMContentLoaded', () => {
             modalInstance = new bootstrap.Modal(document.getElementById('candidateModal'));
@@ -152,11 +171,73 @@
             try {
                 const res = await fetch('/api/candidates');
                 candidatesData = await res.json();
-                renderTable(candidatesData);
+                sortAndRenderTable();
             } catch (err) {
                 console.error('데이터를 불러오는데 실패했습니다:', err);
                 alert('데이터 로드 실패');
             }
+        }
+
+        function sortAndRenderTable() {
+            const sortedData = sortData([...candidatesData]);
+            renderTable(sortedData);
+        }
+
+        function sortData(data) {
+            return data.sort((a, b) => {
+                let aVal = a[currentSortColumn];
+                let bVal = b[currentSortColumn];
+
+                // Handle empty values
+                if (aVal === null || aVal === undefined || aVal === '') aVal = '';
+                if (bVal === null || bVal === undefined || bVal === '') bVal = '';
+
+                // Special handling for dates
+                if (currentSortColumn === 'contact_date') {
+                    const dateA = aVal ? new Date(aVal) : new Date(0);
+                    const dateB = bVal ? new Date(bVal) : new Date(0);
+                    return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+                }
+
+                // Numeric comparison for ID
+                if (currentSortColumn === 'id') {
+                    return currentSortDirection === 'asc'
+                        ? a.id - b.id
+                        : b.id - a.id;
+                }
+
+                // String comparison for other columns
+                const strA = String(aVal).toLowerCase();
+                const strB = String(bVal).toLowerCase();
+
+                if (strA < strB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (strA > strB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function sortTable(column) {
+            // Reset all sort indicators
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+
+            if (currentSortColumn === column) {
+                // Toggle direction if same column
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New column, default to ascending
+                currentSortColumn = column;
+                currentSortDirection = column === 'contact_date' ? 'desc' : 'asc';
+            }
+
+            // Set the sorted class on the current column
+            const currentTh = document.querySelector(`th[onclick="sortTable('${column}')"]`);
+            if (currentTh) {
+                currentTh.classList.add(currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            }
+
+            sortAndRenderTable();
         }
 
         function renderTable(data) {
@@ -178,12 +259,12 @@
                 tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td class="fw-bold">${escapeHtml(c.name)}</td>
-                    <td>${escapeHtml(c.contact || '')}</td>
-                    <td>${escapeHtml(c.contact_date || '')}</td>
-                    <td>${escapeHtml(c.manager || '')}</td>
-                    <td>${escapeHtml(c.status || '')}</td>
-                    <td><span class="badge ${badgeClass} badge-status">${escapeHtml(c.result || '')}</span></td>
-                    <td>${escapeHtml(c.memo || '')}</td>
+                    <td class="ellipsis-short" title="${escapeHtml(c.contact || '')}">${escapeHtml(c.contact || '')}</td>
+                    <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date || '')}</td>
+                    <td class="ellipsis-short" title="${escapeHtml(c.manager || '')}">${escapeHtml(c.manager || '')}</td>
+                    <td class="ellipsis-medium" title="${escapeHtml(c.status || '')}">${escapeHtml(c.status || '')}</td>
+                    <td><span class="badge ${badgeClass} badge-status" title="${escapeHtml(c.result || '')}">${escapeHtml(c.result || '')}</span></td>
+                    <td class="ellipsis" title="${escapeHtml(c.memo || '')}">${escapeHtml(c.memo || '')}</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${c.id})"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate(${c.id})"><i class="fas fa-trash-alt"></i></button>
@@ -284,10 +365,13 @@
                        (c.status && c.status.toLowerCase().includes(keyword)) ||
                        (c.result && c.result.toLowerCase().includes(keyword));
             });
-            renderTable(filtered);
+            // Apply current sort to filtered data
+            const sorted = sortData([...filtered]);
+            renderTable(sorted);
         }
 
         function escapeHtml(str) {
+            if (!str) return '';
             return str
                 .replace(/&/g, '&')
                 .replace(/</g, '<')
