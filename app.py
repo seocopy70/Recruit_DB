@@ -108,13 +108,8 @@ def delete_candidate(id):
 
 if __name__ == '__main__':
     init_db()
-    print(f"🚀 서버 시작: http://localhost:3000")
-    print(f"📊 Supabase 연결: {supabase_url}")
-    if __name__ == '__main__':
-    init_db()
     print(f"🚀 서버 시작")
     print(f"📊 Supabase 연결: {supabase_url}")
     
-    # Render가 지정한 포트를 사용하고, 없으면 기본 3000 사용
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=True)
