@@ -29,6 +29,17 @@
             .ellipsis { max-width: 100px; }
             .ellipsis-short { max-width: 80px; }
             .ellipsis-medium { max-width: 100px; }
+            /* 모바일에서 메모를 두 번째 줄로 표시 */
+            .memo-cell {
+                display: block !important;
+                width: 100% !important;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px dashed #dee2e6;
+            }
+            .id-cell {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -67,14 +78,14 @@
                     <table class="table table-hover table-striped mb-0 align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th onclick="sortTable('id')"># <i class="fas fa-sort sort-icon"></i></th>
+                                <th>#</th>
                                 <th onclick="sortTable('name')">이름 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('contact')">연락처 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('contact_date')">접촉일 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('manager')">추천인 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('status')">진행단계 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('result')">최종결과 <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable('memo')">메모 <i class="fas fa-sort sort-icon"></i></th>
+                                <th>메모</th>
                                 <th class="text-center">관리</th>
                             </tr>
                         </thead>
@@ -256,14 +267,14 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td class="id-cell">${index + 1}</td>
                     <td class="fw-bold">${escapeHtml(c.name)}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.contact || '')}">${escapeHtml(c.contact || '')}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date ? c.contact_date.replace(/^20/, '') : '')}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.manager || '')}">${escapeHtml(c.manager || '')}</td>
                     <td class="ellipsis-medium" title="${escapeHtml(c.status || '')}">${escapeHtml(c.status || '')}</td>
                     <td><span class="badge ${badgeClass} badge-status" title="${escapeHtml(c.result || '')}">${escapeHtml(c.result || '')}</span></td>
-                    <td class="ellipsis" title="${escapeHtml(c.memo || '')}">${escapeHtml(c.memo || '')}</td>
+                    <td class="memo-cell ellipsis" title="${escapeHtml(c.memo || '')}">${escapeHtml(c.memo || '')}</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${c.id})"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate(${c.id})"><i class="fas fa-trash-alt"></i></button>
