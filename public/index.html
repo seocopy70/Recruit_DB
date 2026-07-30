@@ -37,7 +37,7 @@
             </div>
             <div class="col-md-6 text-md-end">
                 <div class="input-group">
-                    <input type="text" id="searchInput" class="form-control" placeholder="이름, 연락처, 담당자, 메모 검색..." onkeyup="filterCandidates()">
+                    <input type="text" id="searchInput" class="form-control" placeholder="이름, 연락처, 추천인, 메모 검색..." onkeyup="filterCandidates()">
                     <button class="btn btn-outline-secondary" type="button" onclick="loadCandidates()"><i class="fas fa-search"></i></button>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                                 <th>후보자 이름</th>
                                 <th>연락처</th>
                                 <th>접촉일</th>
-                                <th>접촉 담당자</th>
+                                <th>추천인</th>
                                 <th>진행 상황</th>
                                 <th>최종 결과</th>
                                 <th>메모</th>
@@ -98,8 +98,8 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label for="manager" class="form-label">접촉 담당자</label>
-                            <input type="text" class="form-control" id="manager" placeholder="담당자 이름">
+                            <label for="manager" class="form-label">추천인</label>
+                            <input type="text" class="form-control" id="manager" placeholder="추천인 이름">
                         </div>
                         
                         <div class="mb-3">
@@ -118,9 +118,8 @@
                             <label for="result" class="form-label">최종 결과</label>
                             <select class="form-select" id="result">
                                 <option value="진행 중">진행 중</option>
-                                <option value="합격">합격</option>
-                                <option value="불합격">불합격</option>
-                                <option value="입사 포기">입사 포기</option>
+                                <option value="등록">등록</option>
+                                <option value="등록포기">등록포기</option>
                             </select>
                         </div>
                         
@@ -171,9 +170,8 @@
 
             data.forEach((c, index) => {
                 let badgeClass = 'bg-secondary';
-                if (c.result === '합격') badgeClass = 'bg-success';
-                else if (c.result === '불합격') badgeClass = 'bg-danger';
-                else if (c.result === '입사 포기') badgeClass = 'bg-warning text-dark';
+                if (c.result === '등록') badgeClass = 'bg-success';
+                else if (c.result === '등록포기') badgeClass = 'bg-danger';
                 else if (c.result === '진행 중') badgeClass = 'bg-info text-dark';
 
                 const tr = document.createElement('tr');
