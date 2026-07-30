@@ -30,14 +30,33 @@
             .ellipsis-short { max-width: 80px; }
             .ellipsis-medium { max-width: 100px; }
             /* 모바일에서 메모를 두 번째 줄로 표시 */
+            .table {
+                display: block;
+                overflow-x: auto;
+            }
+            .table tr {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .table td {
+                flex: 1 0 auto;
+                min-width: 0;
+            }
             .memo-cell {
-                display: block !important;
-                width: 100% !important;
+                flex: 1 0 100%;
+                order: 100;
                 margin-top: 0.5rem;
                 padding-top: 0.5rem;
                 border-top: 1px dashed #dee2e6;
             }
-            .id-cell {
+            /* 관리 컬럼은 첫 번째 줄에 유지 */
+            .table td:last-child {
+                flex: 0 0 auto;
+                order: 1;
+            }
+            /* 모바일에서 메모 헤더만 숨기기 */
+            th:nth-child(8) {
                 display: none;
             }
         }
