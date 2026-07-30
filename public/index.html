@@ -25,39 +25,74 @@
         .ellipsis-medium { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .table-responsive { min-height: 400px; }
         @media (max-width: 768px) {
-            .table th, .table td { font-size: 0.85rem; padding: 0.5rem; }
+            /* 상단 버튼을 한 줄로 표시 */
+            .row.mb-4 {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .col-md-6.mb-2.mb-md-0,
+            .col-md-6.text-md-end {
+                flex: 1 0 0%;
+                min-width: 0;
+            }
+
+            .table th, .table td { font-size: 0.85rem; }
             .ellipsis { max-width: 100px; }
             .ellipsis-short { max-width: 80px; }
             .ellipsis-medium { max-width: 100px; }
-            /* 모바일에서 메모를 두 번째 줄로 표시 */
+
+            /* 테이블 모바일 레이아웃 */
             .table {
                 display: block;
-                overflow-x: auto;
+                width: 100%;
             }
             .table tr {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #dee2e6;
             }
-            .table td {
-                flex: 1 0 auto;
+            .table td, .table th {
+                display: block;
+                padding: 0.25rem;
                 min-width: 0;
             }
+            /* 첫 7개 셀은 첫 번째 줄 */
+            .table td:nth-child(-n+7) {
+                order: 1;
+                flex: 1 0 auto;
+                min-width: 0;
+                max-width: 100px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            /* 메모는 두 번째 줄 (전체 너비) */
             .memo-cell {
+                order: 2;
                 flex: 1 0 100%;
-                order: 100;
                 margin-top: 0.5rem;
                 padding-top: 0.5rem;
                 border-top: 1px dashed #dee2e6;
+                max-width: none;
+                white-space: normal;
             }
-            /* 관리 컬럼은 첫 번째 줄에 유지 */
+            /* 관리 버튼도 두 번째 줄에 메모 옆으로 */
             .table td:last-child {
+                order: 2;
                 flex: 0 0 auto;
-                order: 1;
+                margin-top: 0.5rem;
+                padding-left: 0.5rem;
             }
-            /* 모바일에서 메모 헤더만 숨기기 */
-            th:nth-child(8) {
+            /* 메모 헤더와 관리 헤더 숨기기 */
+            th:nth-child(8), th:last-child {
                 display: none;
+            }
+            /* 이름 컬럼 너비 제한 */
+            .table td:nth-child(2) {
+                max-width: 80px;
             }
         }
     </style>
