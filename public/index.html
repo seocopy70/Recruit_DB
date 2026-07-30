@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팀 리크루팅 데이터베이스</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar-brand { font-weight: bold; }
+        .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
+        .badge-status { font-size: 0.85rem; padding: 0.35em 0.65em; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-users-cog me-2"></i>팀 리크루팅 DB</a>
+            <span class="navbar-text text-light">어디서나 편하게 기록하고 조회하는 리크루팅 관리 시스템</span>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container my-4">
+        
+        <!-- Top Actions & Filters -->
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6 mb-2 mb-md-0">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#candidateModal" onclick="openAddModal()">
+                    <i class="fas fa-user-plus me-1"></i> 후보자 등록
+                </button>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="이름, 연락처, 담당자, 메모 검색..." onkeyup="filterCandidates()">
+                    <button class="btn btn-outline-secondary" type="button" onclick="loadCandidates()"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidates Table Card -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>후보자 이름</th>
+                                <th>연락처</th>
+                                <th>접촉일</th>
+                                <th>접촉 담당자</th>
+                                <th>진행 상황</th>
+                                <th>최종 결과</th>
+                                <th>메모</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidateTableBody">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Candidate Modal (Add / Edit) -->
+    <div class="modal fade" id="candidateModal" tabindex="-1" aria-labelledby="candidateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="candidateForm" onsubmit="saveCandidate(event)">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="candidateModalLabel">후보자 등록</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="candidateId">
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">후보자 이름 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contact" class="form-label">연락처</label>
+                            <input type="text" class="form-control" id="contact" placeholder="전화번호 또는 이메일">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contact_date" class="form-label">접촉일</label>
+                            <input type="date" class="form-control" id="contact_date">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="manager" class="form-label">접촉 담당자</label>
+                            <input type="text" class="form-control" id="manager" placeholder="담당자 이름">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="status" class="form-label">진행 상황</label>
+                            <select class="form-select" id="status">
+                                <option value="1차 접촉">1차 접촉</option>
+                                <option value="서류 검토">서류 검토</option>
+                                <option value="면접 진행">면접 진행</option>
+                                <option value="처우 협의">처우 협의</option>
+                                <option value="입사 확정">입사 확정</option>
+                                <option value="보류/종료">보류/종료</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="result" class="form-label">최종 결과</label>
+                            <select class="form-select" id="result">
+                                <option value="진행 중">진행 중</option>
+                                <option value="합격">합격</option>
+                                <option value="불합격">불합격</option>
+                                <option value="입사 포기">입사 포기</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="memo" class="form-label">메모</label>
+                            <textarea class="form-control" id="memo" rows="3" placeholder="특이사항, 면접 피드백 등"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let candidatesData = [];
+        let modalInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            modalInstance = new bootstrap.Modal(document.getElementById('candidateModal'));
+            loadCandidates();
+        });
+
+        async function loadCandidates() {
+            try {
+                const res = await fetch('/api/candidates');
+                candidatesData = await res.json();
+                renderTable(candidatesData);
+            } catch (err) {
+                console.error('데이터를 불러오는데 실패했습니다:', err);
+                alert('데이터 로드 실패');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('candidateTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">등록된 후보자가 없습니다.</td></tr>`;
+                return;
+            }
+
+            data.forEach((c, index) => {
+                let badgeClass = 'bg-secondary';
+                if (c.result === '합격') badgeClass = 'bg-success';
+                else if (c.result === '불합격') badgeClass = 'bg-danger';
+                else if (c.result === '입사 포기') badgeClass = 'bg-warning text-dark';
+                else if (c.result === '진행 중') badgeClass = 'bg-info text-dark';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td class="fw-bold">${escapeHtml(c.name)}</td>
+                    <td>${escapeHtml(c.contact || '')}</td>
+                    <td>${escapeHtml(c.contact_date || '')}</td>
+                    <td>${escapeHtml(c.manager || '')}</td>
+                    <td>${escapeHtml(c.status || '')}</td>
+                    <td><span class="badge ${badgeClass} badge-status">${escapeHtml(c.result || '')}</span></td>
+                    <td>${escapeHtml(c.memo || '')}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${c.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate(${c.id})"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openAddModal() {
+            document.getElementById('candidateForm').reset();
+            document.getElementById('candidateId').value = '';
+            document.getElementById('candidateModalLabel').innerText = '후보자 등록';
+        }
+
+        function openEditModal(id) {
+            const c = candidatesData.find(item => item.id === id);
+            if (!c) return;
+
+            document.getElementById('candidateId').value = c.id;
+            document.getElementById('name').value = c.name || '';
+            document.getElementById('contact').value = c.contact || '';
+            document.getElementById('contact_date').value = c.contact_date || '';
+            document.getElementById('manager').value = c.manager || '';
+            document.getElementById('status').value = c.status || '1차 접촉';
+            document.getElementById('result').value = c.result || '진행 중';
+            document.getElementById('memo').value = c.memo || '';
+
+            document.getElementById('candidateModalLabel').innerText = '후보자 수정';
+            modalInstance.show();
+        }
+
+        async function saveCandidate(event) {
+            event.preventDefault();
+            const id = document.getElementById('candidateId').value;
+            const payload = {
+                name: document.getElementById('name').value,
+                contact: document.getElementById('contact').value,
+                contact_date: document.getElementById('contact_date').value,
+                manager: document.getElementById('manager').value,
+                status: document.getElementById('status').value,
+                result: document.getElementById('result').value,
+                memo: document.getElementById('memo').value
+            };
+
+            try {
+                let res;
+                if (id) {
+                    res = await fetch(`/api/candidates/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    res = await fetch('/api/candidates', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                const result = await res.json();
+                if (res.ok) {
+                    modalInstance.hide();
+                    loadCandidates();
+                } else {
+                    alert(result.error || '저장 실패');
+                }
+            } catch (err) {
+                console.error('저장 중 오류 발생:', err);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function deleteCandidate(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await fetch(`/api/candidates/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadCandidates();
+                } else {
+                    alert('삭제 실패');
+                }
+            } catch (err) {
+                console.error('삭제 중 오류 발생:', err);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        function filterCandidates() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = candidatesData.filter(c => {
+                return (c.name && c.name.toLowerCase().includes(keyword)) ||
+                       (c.contact && c.contact.toLowerCase().includes(keyword)) ||
+                       (c.manager && c.manager.toLowerCase().includes(keyword)) ||
+                       (c.memo && c.memo.toLowerCase().includes(keyword)) ||
+                       (c.status && c.status.toLowerCase().includes(keyword)) ||
+                       (c.result && c.result.toLowerCase().includes(keyword));
+            });
+            renderTable(filtered);
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/"/g, '"')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>

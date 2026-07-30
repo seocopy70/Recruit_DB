@@ -1,0 +1,13 @@
+{
+  "name": "recruiting-db",
+  "version": "1.0.0",
+  "description": "Team Recruiting Database Web Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.7"
+  }
+}
