@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>팀 리크루팅 데이터베이스</title>
     <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -24,85 +23,6 @@
         .ellipsis-short { max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ellipsis-medium { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .table-responsive { min-height: 400px; }
-        /* 모바일 가로모드: PC처럼 한 줄로 길게 표시 (가로 스크롤) */
-        @media (max-width: 768px) and (orientation: landscape) {
-            .table-responsive { overflow-x: auto; }
-            .table { display: table; }
-            .table tr { display: table-row; }
-            .table td, .table th { display: table-cell; }
-            .table th, .table td { font-size: 0.85rem; }
-            .ellipsis { max-width: 100px; }
-            .ellipsis-short { max-width: 80px; }
-            .ellipsis-medium { max-width: 100px; }
-            /* 메모와 관리 헤더 숨기기 */
-            th:nth-child(8), th:last-child { display: none; }
-        }
-
-        /* 모바일 세로모드: flex 레이아웃으로 메모를 두 번째 줄에 */
-        @media (max-width: 768px) and (orientation: portrait) {
-            /* 상단 버튼을 한 줄로 표시 */
-            .row.mb-4 {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-            }
-            .col-md-6.mb-2.mb-md-0,
-            .col-md-6.text-md-end {
-                flex: 1 0 0%;
-                min-width: 0;
-            }
-
-            .table th, .table td { font-size: 0.85rem; }
-            .ellipsis { max-width: 100px; }
-            .ellipsis-short { max-width: 80px; }
-            .ellipsis-medium { max-width: 100px; }
-
-            .table-responsive { overflow-x: hidden; }
-            .table { display: block; width: 100%; }
-
-            /* 헤더와 바디 모두 flex 레이아웃 */
-            .table thead tr, .table tbody tr {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-            }
-            .table thead th, .table tbody td {
-                display: block;
-                padding: 0.25rem;
-                min-width: 0;
-            }
-
-            /* 컬럼 너비 맞추기 (헤더와 바디) */
-            .table thead th:nth-child(1), .table tbody td:nth-child(1) { flex: 0 0 40px; text-align: center; }
-            .table thead th:nth-child(2), .table tbody td:nth-child(2) { flex: 0 0 80px; }
-            .table thead th:nth-child(3), .table tbody td:nth-child(3) { flex: 0 0 100px; margin-right: 0.5rem; }
-            .table thead th:nth-child(4), .table tbody td:nth-child(4) { flex: 0 0 80px; margin-right: 0.5rem; }
-            .table thead th:nth-child(5), .table tbody td:nth-child(5) { flex: 0 0 80px; }
-            .table thead th:nth-child(6), .table tbody td:nth-child(6) { flex: 0 0 100px; }
-            .table thead th:nth-child(7), .table tbody td:nth-child(7) { flex: 0 0 80px; }
-
-            /* 메모는 두 번째 줄 (전체 너비) */
-            .memo-cell {
-                order: 2;
-                flex: 0 0 100%;
-                margin-top: 0.5rem;
-                padding-top: 0.5rem;
-                border-top: 1px dashed #dee2e6;
-                max-width: none;
-                white-space: normal;
-            }
-            /* 관리 버튼도 두 번째 줄에 메모 옆으로 */
-            .table td:last-child {
-                order: 2;
-                flex: 0 0 auto;
-                margin-top: 0.5rem;
-                padding-left: 0.5rem;
-            }
-            /* 메모와 관리 헤더 숨기기 */
-            th:nth-child(8), th:last-child {
-                display: none;
-            }
-        }
     </style>
 </head>
 <body>
