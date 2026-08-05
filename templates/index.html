@@ -132,9 +132,14 @@
                             </select>
                         </div>
 
+                        <div class="mb-3" id="memoHistoryWrapper" style="display:none;">
+                            <label for="memoHistory" class="form-label">이전 메모 기록</label>
+                            <textarea class="form-control" id="memoHistory" rows="4" readonly style="background-color:#f8f9fa;"></textarea>
+                        </div>
+
                         <div class="mb-3">
-                            <label for="memo" class="form-label">메모</label>
-                            <textarea class="form-control" id="memo" rows="3" placeholder="특이사항, 면접 피드백 등"></textarea>
+                            <label for="memo" class="form-label">새 메모 추가</label>
+                            <textarea class="form-control" id="memo" rows="3" placeholder="특이사항, 면접 피드백 등을 입력하면 날짜와 함께 자동으로 기록됩니다."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -270,6 +275,8 @@
             document.getElementById('candidateForm').reset();
             document.getElementById('candidateId').value = '';
             document.getElementById('candidateModalLabel').innerText = '후보자 등록';
+            document.getElementById('memoHistoryWrapper').style.display = 'none';
+            document.getElementById('memoHistory').value = '';
         }
 
         function openEditModal(id) {
@@ -283,7 +290,15 @@
             document.getElementById('manager').value = c.manager || '';
             document.getElementById('status').value = c.status || '포지션 수락';
             document.getElementById('result').value = c.result || '진행 중';
-            document.getElementById('memo').value = c.memo || '';
+
+            if (c.memo) {
+                document.getElementById('memoHistoryWrapper').style.display = 'block';
+                document.getElementById('memoHistory').value = c.memo;
+            } else {
+                document.getElementById('memoHistoryWrapper').style.display = 'none';
+                document.getElementById('memoHistory').value = '';
+            }
+            document.getElementById('memo').value = '';
 
             document.getElementById('candidateModalLabel').innerText = '후보자 수정';
             modalInstance.show();
@@ -292,6 +307,25 @@
         async function saveCandidate(event) {
             event.preventDefault();
             const id = document.getElementById('candidateId').value;
+            const newMemoText = document.getElementById('memo').value.trim();
+            const existingCandidate = id ? candidatesData.find(c => c.id == id) : null;
+            const existingMemo = existingCandidate ? (existingCandidate.memo || '') : '';
+
+            // 새로 입력한 내용이 있을 때만 날짜를 붙여서 기존 메모 뒤에 이어붙임
+            let finalMemo = existingMemo;
+            if (newMemoText) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).replace(/(\d+)\. (\d+)\. (\d+)\. (\d+):(\d+)/, '$1-$2-$3 $4:$5');
+                const newEntry = `[${dateStr}] ${newMemoText}`;
+                finalMemo = existingMemo ? `${existingMemo}\n\n${newEntry}` : newEntry;
+            }
+
             const payload = {
                 name: document.getElementById('name').value,
                 contact: document.getElementById('contact').value,
@@ -299,7 +333,7 @@
                 manager: document.getElementById('manager').value,
                 status: document.getElementById('status').value,
                 result: document.getElementById('result').value,
-                memo: document.getElementById('memo').value
+                memo: finalMemo
             };
 
             try {

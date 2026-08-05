@@ -71,6 +71,9 @@ def add_candidate():
 def update_candidate(id):
     data = request.json
     name = data.get('name')
+    if not name:
+        return jsonify({'error': '이름은 필수입니다.'}), 400
+
     contact = data.get('contact', '')
     contact_date = data.get('contact_date', '')
     manager = data.get('manager', '')
@@ -112,4 +115,5 @@ if __name__ == '__main__':
     print(f"📊 Supabase 연결: {supabase_url}")
     
     port = int(os.environ.get('PORT', 3000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
