@@ -133,8 +133,8 @@
                         </div>
 
                         <div class="mb-3" id="memoHistoryWrapper" style="display:none;">
-                            <label for="memoHistory" class="form-label">이전 메모 기록</label>
-                            <textarea class="form-control" id="memoHistory" rows="4" readonly style="background-color:#f8f9fa;"></textarea>
+                            <label for="memoHistory" class="form-label">이전 메모 기록 <span class="text-muted" style="font-weight:normal;">(직접 수정 가능)</span></label>
+                            <textarea class="form-control" id="memoHistory" rows="4"></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -308,11 +308,12 @@
             event.preventDefault();
             const id = document.getElementById('candidateId').value;
             const newMemoText = document.getElementById('memo').value.trim();
-            const existingCandidate = id ? candidatesData.find(c => c.id == id) : null;
-            const existingMemo = existingCandidate ? (existingCandidate.memo || '') : '';
+            // 이전 메모 기록은 화면에서 직접 수정했을 수 있으므로, 캐시된 값이 아니라
+            // 현재 입력창에 보이는 값을 기준으로 사용
+            const editedHistory = document.getElementById('memoHistory').value.trim();
 
             // 새로 입력한 내용이 있을 때만 날짜를 붙여서 최신 메모가 위로 오도록 이어붙임
-            let finalMemo = existingMemo;
+            let finalMemo = editedHistory;
             if (newMemoText) {
                 const now = new Date();
                 const yy = String(now.getFullYear()).slice(-2);
@@ -320,7 +321,7 @@
                 const dd = String(now.getDate()).padStart(2, '0');
                 const dateStr = `${yy}${mm}${dd}`;
                 const newEntry = `[${dateStr}] ${newMemoText}`;
-                finalMemo = existingMemo ? `${newEntry}\n\n${existingMemo}` : newEntry;
+                finalMemo = editedHistory ? `${newEntry}\n\n${editedHistory}` : newEntry;
             }
 
             const payload = {
