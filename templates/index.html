@@ -156,7 +156,7 @@
     <script>
         let candidatesData = [];
         let modalInstance = null;
-        let currentSortColumn = 'contact_date';
+        let currentSortColumn = 'updated_at';
         let currentSortDirection = 'desc';
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -190,7 +190,7 @@
                 if (bVal === null || bVal === undefined || bVal === '') bVal = '';
 
                 // Special handling for dates
-                if (currentSortColumn === 'contact_date') {
+                if (currentSortColumn === 'contact_date' || currentSortColumn === 'updated_at') {
                     const dateA = aVal ? new Date(aVal) : new Date(0);
                     const dateB = bVal ? new Date(bVal) : new Date(0);
                     return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
@@ -311,19 +311,16 @@
             const existingCandidate = id ? candidatesData.find(c => c.id == id) : null;
             const existingMemo = existingCandidate ? (existingCandidate.memo || '') : '';
 
-            // 새로 입력한 내용이 있을 때만 날짜를 붙여서 기존 메모 뒤에 이어붙임
+            // 새로 입력한 내용이 있을 때만 날짜를 붙여서 최신 메모가 위로 오도록 이어붙임
             let finalMemo = existingMemo;
             if (newMemoText) {
                 const now = new Date();
-                const dateStr = now.toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }).replace(/(\d+)\. (\d+)\. (\d+)\. (\d+):(\d+)/, '$1-$2-$3 $4:$5');
+                const yy = String(now.getFullYear()).slice(-2);
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const dateStr = `${yy}${mm}${dd}`;
                 const newEntry = `[${dateStr}] ${newMemoText}`;
-                finalMemo = existingMemo ? `${existingMemo}\n\n${newEntry}` : newEntry;
+                finalMemo = existingMemo ? `${newEntry}\n\n${existingMemo}` : newEntry;
             }
 
             const payload = {

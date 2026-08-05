@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 from flask import Flask, render_template, request, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -30,7 +31,7 @@ def get_candidates():
     try:
         response = supabase.table('candidates') \
             .select('*') \
-            .order('created_at', desc=True) \
+            .order('updated_at', desc=True) \
             .execute()
         candidates = response.data
         return jsonify(candidates)
@@ -90,7 +91,8 @@ def update_candidate(id):
                 'manager': manager,
                 'status': status,
                 'result': result,
-                'memo': memo
+                'memo': memo,
+                'updated_at': datetime.now(timezone.utc).isoformat()
             }) \
             .eq('id', id) \
             .execute()
