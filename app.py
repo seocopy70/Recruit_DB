@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timezone
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -13,6 +13,34 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 supabase_url = os.getenv('SUPABASE_URL')
 supabase_key = os.getenv('SUPABASE_KEY')
 supabase: Client = create_client(supabase_url, supabase_key)
+
+# PWA 리소스는 웹 루트에서 제공해야 Service Worker가 사이트 전체를 제어할 수 있습니다.
+@app.route('/manifest.webmanifest')
+def pwa_manifest():
+    return send_from_directory(app.static_folder, 'manifest.webmanifest', mimetype='application/manifest+json')
+
+@app.route('/sw.js')
+def pwa_service_worker():
+    response = make_response(send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
+
+@app.after_request
+def add_pwa_metadata(response):
+    # HTML head에 PWA 메타데이터를 주입해 기존 템플릿 기능은 그대로 유지합니다.
+    if request.path == '/' and response.content_type.startswith('text/html'):
+        html = response.get_data(as_text=True)
+        marker = '</head>'
+        if marker in html and 'manifest.webmanifest' not in html:
+            pwa_head = '''\n    <meta name="theme-color" content="#0d6efd">\n    <meta name="mobile-web-app-capable" content="yes">\n    <meta name="apple-mobile-web-app-capable" content="yes">\n    <meta name="apple-mobile-web-app-status-bar-style" content="default">\n    <meta name="apple-mobile-web-app-title" content="리크루팅 DB">\n    <link rel="manifest" href="/manifest.webmanifest">\n    <link rel="icon" href="/static/icons/icon-192.svg" type="image/svg+xml">\n    <link rel="apple-touch-icon" href="/static/icons/icon-192.svg">\n'''
+            html = html.replace(marker, pwa_head + marker, 1)
+        body_marker = '</body>'
+        if body_marker in html and '/sw.js' not in html:
+            pwa_script = '''\n    <script>\n      if ('serviceWorker' in navigator) {\n        window.addEventListener('load', () => {\n          navigator.serviceWorker.register('/sw.js', { scope: '/' })\n            .then(reg => console.log('PWA Service Worker 등록 완료:', reg.scope))\n            .catch(err => console.warn('PWA Service Worker 등록 실패:', err));\n        });\n      }\n    </script>\n'''
+            html = html.replace(body_marker, pwa_script + body_marker, 1)
+        response.set_data(html)
+    return response
 
 def init_db():
     # Supabase는 자동으로 테이블을 생성하지 않으므로 수동으로 확인
