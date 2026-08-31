@@ -2,27 +2,137 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>팀 리크루팅 데이터베이스</title>
     <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        html, body {
+            height: 100%;
+            overscroll-behavior: none;
+        }
         body { background-color: #f8f9fa; }
         .navbar-brand { font-weight: bold; }
         .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
-        .badge-status { font-size: 0.85rem; padding: 0.35em 0.65em; }
-        .table th { cursor: pointer; position: relative; user-select: none; }
-        .table th:hover { background-color: #f0f0f0; }
-        .table th .sort-icon { margin-left: 5px; opacity: 0.5; }
-        .table th.sorted-asc .sort-icon { opacity: 1; }
+
+        /* 테이블: 좁은/넓은 화면 모두 가로 스크롤 가능 */
+        .table-responsive {
+            min-height: 300px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+        .table {
+            min-width: 720px; /* 컬럼이 너무 찌그러지지 않도록 최소 폭 유지 */
+            margin-bottom: 0;
+            table-layout: auto;
+        }
+        .table th, .table td {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .table th {
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            font-size: 0.85rem;
+            padding: 0.55rem 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        .table td {
+            font-size: 0.9rem;
+            padding: 0.45rem 0.5rem;
+        }
+        .table th:hover { background-color: #1a1a1a !important; }
+        .table th .sort-icon { margin-left: 4px; opacity: 0.45; font-size: 0.75em; }
+        .table th.sorted-asc .sort-icon,
         .table th.sorted-desc .sort-icon { opacity: 1; }
-        .table th.sorted-asc { background-color: #e9f7fe; }
-        .table th.sorted-desc { background-color: #e9f7fe; }
-        .ellipsis { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ellipsis-short { max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ellipsis-medium { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .table-responsive { min-height: 400px; }
+        .table th.sorted-asc,
+        .table th.sorted-desc { background-color: #0b5ed7 !important; }
+
+        .badge-status { font-size: 0.8rem; padding: 0.3em 0.55em; }
+        .ellipsis {
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ellipsis-short {
+            max-width: 110px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ellipsis-medium {
+            max-width: 130px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 인라인 select */
+        .inline-select {
+            min-width: 110px;
+            max-width: 140px;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.4rem;
+            cursor: pointer;
+        }
+
+        /* 메모 셀: 탭 가능 표시 */
+        .memo-cell {
+            max-width: 160px;
+            cursor: pointer;
+            color: #0d6efd;
+        }
+        .memo-cell:hover {
+            text-decoration: underline;
+            background-color: #e7f1ff;
+        }
+        .memo-cell.empty {
+            color: #adb5bd;
+            font-style: italic;
+        }
+
+        /* 이전 메모 읽기 전용 영역 */
+        .memo-readonly {
+            background-color: #f1f3f5;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 220px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #495057;
+            line-height: 1.5;
+        }
+        .memo-readonly:empty::before {
+            content: "(이전 메모 없음)";
+            color: #adb5bd;
+            font-style: italic;
+        }
+
+        /* 모바일 헤더/내비 정리 */
+        @media (max-width: 768px) {
+            .navbar-text { display: none; }
+            .table th { font-size: 0.78rem; padding: 0.45rem 0.4rem; }
+            .table td { font-size: 0.82rem; padding: 0.35rem 0.4rem; }
+            .inline-select { min-width: 100px; font-size: 0.75rem; }
+            .ellipsis, .memo-cell { max-width: 130px; }
+        }
+
+        /* 스크롤바 살짝 보이게 (터치 기기에서도 스크롤 가능 인식) */
+        .table-responsive::-webkit-scrollbar {
+            height: 6px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #adb5bd;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -31,24 +141,24 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand" href="#"><i class="fas fa-users-cog me-2"></i>팀 리크루팅 DB</a>
-            <span class="navbar-text text-light">어디서나 편하게 기록하고 조회하는 리크루팅 관리 시스템</span>
+            <span class="navbar-text text-light d-none d-md-inline">어디서나 편하게 기록하고 조회하는 리크루팅 관리 시스템</span>
         </div>
     </nav>
 
     <!-- Main Container -->
-    <div class="container my-4">
+    <div class="container my-3 my-md-4">
 
         <!-- Top Actions & Filters -->
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-6 mb-2 mb-md-0">
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#candidateModal" onclick="openAddModal()">
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-12 col-md-5">
+                <button class="btn btn-success w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#candidateModal" onclick="openAddModal()">
                     <i class="fas fa-user-plus me-1"></i> 후보자 등록
                 </button>
             </div>
-            <div class="col-md-6 text-md-end">
+            <div class="col-12 col-md-7">
                 <div class="input-group">
                     <input type="text" id="searchInput" class="form-control" placeholder="이름, 연락처, 추천인, 메모 검색..." onkeyup="filterCandidates()">
-                    <button class="btn btn-outline-secondary" type="button" onclick="loadCandidates()"><i class="fas fa-search"></i></button>
+                    <button class="btn btn-outline-secondary" type="button" onclick="loadCandidates()"><i class="fas fa-sync-alt"></i></button>
                 </div>
             </div>
         </div>
@@ -60,7 +170,7 @@
                     <table class="table table-hover table-striped mb-0 align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th>#</th>
+                                <th style="width:40px">#</th>
                                 <th onclick="sortTable('name')">이름 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('contact')">연락처 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('contact_date')">접촉일 <i class="fas fa-sort sort-icon"></i></th>
@@ -68,7 +178,7 @@
                                 <th onclick="sortTable('status')">진행단계 <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable('result')">최종결과 <i class="fas fa-sort sort-icon"></i></th>
                                 <th>메모</th>
-                                <th class="text-center">관리</th>
+                                <th class="text-center" style="width:90px">관리</th>
                             </tr>
                         </thead>
                         <tbody id="candidateTableBody">
@@ -78,11 +188,14 @@
                 </div>
             </div>
         </div>
+        <p class="text-muted small mt-2 mb-0 d-md-none">
+            <i class="fas fa-arrows-alt-h me-1"></i>테이블을 좌우로 밀어 보세요
+        </p>
     </div>
 
-    <!-- Candidate Modal (Add / Edit) -->
+    <!-- Candidate Modal (Add / Full Edit) -->
     <div class="modal fade" id="candidateModal" tabindex="-1" aria-labelledby="candidateModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <form id="candidateForm" onsubmit="saveCandidate(event)">
                     <div class="modal-header bg-primary text-white">
@@ -132,9 +245,10 @@
                             </select>
                         </div>
 
+                        <!-- 이전 메모: 읽기 전용 -->
                         <div class="mb-3" id="memoHistoryWrapper" style="display:none;">
-                            <label for="memoHistory" class="form-label">이전 메모 기록 <span class="text-muted" style="font-weight:normal;">(직접 수정 가능)</span></label>
-                            <textarea class="form-control" id="memoHistory" rows="4"></textarea>
+                            <label class="form-label">이전 메모 기록 <span class="text-muted" style="font-weight:normal;">(읽기 전용)</span></label>
+                            <div class="memo-readonly" id="memoHistoryDisplay"></div>
                         </div>
 
                         <div class="mb-3">
@@ -151,16 +265,51 @@
         </div>
     </div>
 
+    <!-- Memo-only Modal (목록에서 메모 탭 시) -->
+    <div class="modal fade" id="memoModal" tabindex="-1" aria-labelledby="memoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-dark">
+                    <h5 class="modal-title" id="memoModalLabel">메모</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="memoCandidateId">
+                    <p class="mb-2 small text-muted" id="memoCandidateName"></p>
+
+                    <div class="mb-3">
+                        <label class="form-label">이전 메모 <span class="text-muted">(읽기 전용)</span></label>
+                        <div class="memo-readonly" id="memoReadonlyDisplay"></div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label for="memoNewInput" class="form-label">새 메모 추가</label>
+                        <textarea class="form-control" id="memoNewInput" rows="3" placeholder="내용을 입력하면 날짜와 함께 자동으로 추가됩니다."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" onclick="saveMemoOnly()">메모 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS Bundle CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let candidatesData = [];
         let modalInstance = null;
+        let memoModalInstance = null;
         let currentSortColumn = 'updated_at';
         let currentSortDirection = 'desc';
 
+        const STATUS_OPTIONS = ['포지션 수락', '잡페어 참석', 'TS 진행', '교육 입과', '등록'];
+        const RESULT_OPTIONS = ['진행 중', '등록', '등록포기'];
+
         document.addEventListener('DOMContentLoaded', () => {
             modalInstance = new bootstrap.Modal(document.getElementById('candidateModal'));
+            memoModalInstance = new bootstrap.Modal(document.getElementById('memoModal'));
             loadCandidates();
         });
 
@@ -168,6 +317,10 @@
             try {
                 const res = await fetch('/api/candidates');
                 candidatesData = await res.json();
+                if (!Array.isArray(candidatesData)) {
+                    console.error('Unexpected response:', candidatesData);
+                    candidatesData = [];
+                }
                 sortAndRenderTable();
             } catch (err) {
                 console.error('데이터를 불러오는데 실패했습니다:', err);
@@ -185,28 +338,21 @@
                 let aVal = a[currentSortColumn];
                 let bVal = b[currentSortColumn];
 
-                // Handle empty values
                 if (aVal === null || aVal === undefined || aVal === '') aVal = '';
                 if (bVal === null || bVal === undefined || bVal === '') bVal = '';
 
-                // Special handling for dates
                 if (currentSortColumn === 'contact_date' || currentSortColumn === 'updated_at') {
                     const dateA = aVal ? new Date(aVal) : new Date(0);
                     const dateB = bVal ? new Date(bVal) : new Date(0);
                     return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
                 }
 
-                // Numeric comparison for ID
                 if (currentSortColumn === 'id') {
-                    return currentSortDirection === 'asc'
-                        ? a.id - b.id
-                        : b.id - a.id;
+                    return currentSortDirection === 'asc' ? a.id - b.id : b.id - a.id;
                 }
 
-                // String comparison for other columns
                 const strA = String(aVal).toLowerCase();
                 const strB = String(bVal).toLowerCase();
-
                 if (strA < strB) return currentSortDirection === 'asc' ? -1 : 1;
                 if (strA > strB) return currentSortDirection === 'asc' ? 1 : -1;
                 return 0;
@@ -214,35 +360,38 @@
         }
 
         function sortTable(column) {
-            // Reset all sort indicators
-            document.querySelectorAll('th').forEach(th => {
-                th.classList.remove('sorted-asc', 'sorted-desc');
-            });
-
             if (currentSortColumn === column) {
-                // Toggle direction if same column
                 currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
             } else {
-                // New column, default to ascending
                 currentSortColumn = column;
-                currentSortDirection = column === 'contact_date' ? 'desc' : 'asc';
+                currentSortDirection = 'asc';
             }
-
-            // Set the sorted class on the current column
-            const currentTh = document.querySelector(`th[onclick="sortTable('${column}')"]`);
-            if (currentTh) {
-                currentTh.classList.add(currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            // 헤더 정렬 표시 업데이트
+            document.querySelectorAll('thead th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            const headers = document.querySelectorAll('thead th');
+            // 인덱스 매핑: 0=# 1=name 2=contact 3=contact_date 4=manager 5=status 6=result
+            const colMap = { name: 1, contact: 2, contact_date: 3, manager: 4, status: 5, result: 6 };
+            const idx = colMap[column];
+            if (idx !== undefined && headers[idx]) {
+                headers[idx].classList.add(currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
             }
-
             sortAndRenderTable();
+        }
+
+        function buildSelectOptions(options, selectedValue) {
+            return options.map(opt =>
+                `<option value="${escapeHtml(opt)}" ${opt === selectedValue ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+            ).join('');
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('candidateTableBody');
             tbody.innerHTML = '';
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">등록된 후보자가 없습니다.</td></tr>`;
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">등록된 후보자가 없습니다.</td></tr>';
                 return;
             }
 
@@ -252,6 +401,28 @@
                 else if (c.result === '등록포기') badgeClass = 'bg-danger';
                 else if (c.result === '진행 중') badgeClass = 'bg-info text-dark';
 
+                const memoText = c.memo || '';
+                const memoPreview = memoText
+                    ? escapeHtml(memoText.split('\n')[0].slice(0, 40) + (memoText.length > 40 ? '…' : ''))
+                    : '메모 없음';
+                const memoClass = memoText ? 'memo-cell ellipsis' : 'memo-cell empty ellipsis';
+
+                const statusSelect = `
+                    <select class="form-select form-select-sm inline-select"
+                            data-id="${c.id}" data-field="status"
+                            onchange="updateField(${c.id}, 'status', this.value)"
+                            onclick="event.stopPropagation()">
+                        ${buildSelectOptions(STATUS_OPTIONS, c.status || '포지션 수락')}
+                    </select>`;
+
+                const resultSelect = `
+                    <select class="form-select form-select-sm inline-select"
+                            data-id="${c.id}" data-field="result"
+                            onchange="updateField(${c.id}, 'result', this.value)"
+                            onclick="event.stopPropagation()">
+                        ${buildSelectOptions(RESULT_OPTIONS, c.result || '진행 중')}
+                    </select>`;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="id-cell">${index + 1}</td>
@@ -259,16 +430,58 @@
                     <td class="ellipsis-short" title="${escapeHtml(c.contact || '')}">${escapeHtml(c.contact || '')}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date ? c.contact_date.replace(/^20/, '') : '')}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.manager || '')}">${escapeHtml(c.manager || '')}</td>
-                    <td class="ellipsis-medium" title="${escapeHtml(c.status || '')}">${escapeHtml(c.status || '')}</td>
-                    <td><span class="badge ${badgeClass} badge-status" title="${escapeHtml(c.result || '')}">${escapeHtml(c.result || '')}</span></td>
-                    <td class="memo-cell ellipsis" title="${escapeHtml(c.memo || '')}">${escapeHtml(c.memo || '')}</td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${c.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate(${c.id})"><i class="fas fa-trash-alt"></i></button>
+                    <td>${statusSelect}</td>
+                    <td>${resultSelect}</td>
+                    <td class="${memoClass}" title="${escapeHtml(memoText)}" onclick="openMemoModal(${c.id})">${memoPreview}</td>
+                    <td class="text-center text-nowrap">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${c.id})" title="전체 수정">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate(${c.id})" title="삭제">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        async function updateField(id, field, value) {
+            const c = candidatesData.find(item => item.id === id);
+            if (!c) return;
+
+            const payload = {
+                name: c.name,
+                contact: c.contact || '',
+                contact_date: c.contact_date || '',
+                manager: c.manager || '',
+                status: field === 'status' ? value : (c.status || ''),
+                result: field === 'result' ? value : (c.result || ''),
+                memo: c.memo || ''
+            };
+
+            try {
+                const res = await fetch(`/api/candidates/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    // 로컬 데이터 갱신
+                    c[field] = value;
+                    c.updated_at = new Date().toISOString();
+                    // 배지 색상 등 반영을 위해 재렌더
+                    sortAndRenderTable();
+                } else {
+                    alert(result.error || '수정 실패');
+                    loadCandidates();
+                }
+            } catch (err) {
+                console.error('필드 수정 오류:', err);
+                alert('수정 중 오류가 발생했습니다.');
+                loadCandidates();
+            }
         }
 
         function openAddModal() {
@@ -276,7 +489,8 @@
             document.getElementById('candidateId').value = '';
             document.getElementById('candidateModalLabel').innerText = '후보자 등록';
             document.getElementById('memoHistoryWrapper').style.display = 'none';
-            document.getElementById('memoHistory').value = '';
+            document.getElementById('memoHistoryDisplay').textContent = '';
+            document.getElementById('memo').value = '';
         }
 
         function openEditModal(id) {
@@ -293,10 +507,10 @@
 
             if (c.memo) {
                 document.getElementById('memoHistoryWrapper').style.display = 'block';
-                document.getElementById('memoHistory').value = c.memo;
+                document.getElementById('memoHistoryDisplay').textContent = c.memo;
             } else {
                 document.getElementById('memoHistoryWrapper').style.display = 'none';
-                document.getElementById('memoHistory').value = '';
+                document.getElementById('memoHistoryDisplay').textContent = '';
             }
             document.getElementById('memo').value = '';
 
@@ -304,25 +518,84 @@
             modalInstance.show();
         }
 
+        function openMemoModal(id) {
+            const c = candidatesData.find(item => item.id === id);
+            if (!c) return;
+
+            document.getElementById('memoCandidateId').value = c.id;
+            document.getElementById('memoCandidateName').textContent = c.name ? `후보자: ${c.name}` : '';
+            document.getElementById('memoReadonlyDisplay').textContent = c.memo || '';
+            document.getElementById('memoNewInput').value = '';
+            memoModalInstance.show();
+        }
+
+        function appendMemoWithDate(existingMemo, newText) {
+            const trimmed = (newText || '').trim();
+            if (!trimmed) return existingMemo || '';
+
+            const now = new Date();
+            const yy = String(now.getFullYear()).slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${yy}${mm}${dd}`;
+            const newEntry = `[${dateStr}] ${trimmed}`;
+            return existingMemo ? `${newEntry}\n\n${existingMemo}` : newEntry;
+        }
+
+        async function saveMemoOnly() {
+            const id = document.getElementById('memoCandidateId').value;
+            const c = candidatesData.find(item => item.id === Number(id) || item.id === id);
+            if (!c) return;
+
+            const newText = document.getElementById('memoNewInput').value;
+            if (!newText.trim()) {
+                alert('추가할 메모를 입력해 주세요.');
+                return;
+            }
+
+            const finalMemo = appendMemoWithDate(c.memo || '', newText);
+            const payload = {
+                name: c.name,
+                contact: c.contact || '',
+                contact_date: c.contact_date || '',
+                manager: c.manager || '',
+                status: c.status || '',
+                result: c.result || '',
+                memo: finalMemo
+            };
+
+            try {
+                const res = await fetch(`/api/candidates/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    memoModalInstance.hide();
+                    loadCandidates();
+                } else {
+                    alert(result.error || '메모 저장 실패');
+                }
+            } catch (err) {
+                console.error('메모 저장 오류:', err);
+                alert('메모 저장 중 오류가 발생했습니다.');
+            }
+        }
+
         async function saveCandidate(event) {
             event.preventDefault();
             const id = document.getElementById('candidateId').value;
             const newMemoText = document.getElementById('memo').value.trim();
-            // 이전 메모 기록은 화면에서 직접 수정했을 수 있으므로, 캐시된 값이 아니라
-            // 현재 입력창에 보이는 값을 기준으로 사용
-            const editedHistory = document.getElementById('memoHistory').value.trim();
 
-            // 새로 입력한 내용이 있을 때만 날짜를 붙여서 최신 메모가 위로 오도록 이어붙임
-            let finalMemo = editedHistory;
-            if (newMemoText) {
-                const now = new Date();
-                const yy = String(now.getFullYear()).slice(-2);
-                const mm = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
-                const dateStr = `${yy}${mm}${dd}`;
-                const newEntry = `[${dateStr}] ${newMemoText}`;
-                finalMemo = editedHistory ? `${newEntry}\n\n${editedHistory}` : newEntry;
+            // 이전 메모는 읽기 전용이므로, 캐시된 원본을 기준으로 새 메모만 추가
+            let baseMemo = '';
+            if (id) {
+                const c = candidatesData.find(item => item.id === Number(id) || item.id === id);
+                baseMemo = (c && c.memo) ? c.memo : '';
             }
+
+            const finalMemo = appendMemoWithDate(baseMemo, newMemoText);
 
             const payload = {
                 name: document.getElementById('name').value,
@@ -389,18 +662,17 @@
                        (c.status && c.status.toLowerCase().includes(keyword)) ||
                        (c.result && c.result.toLowerCase().includes(keyword));
             });
-            // Apply current sort to filtered data
             const sorted = sortData([...filtered]);
             renderTable(sorted);
         }
 
         function escapeHtml(str) {
-            if (!str) return '';
-            return str
-                .replace(/&/g, '&')
-                .replace(/</g, '<')
-                .replace(/>/g, '>')
-                .replace(/"/g, '"')
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
     </script>
