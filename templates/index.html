@@ -26,9 +26,16 @@
             padding-bottom: 0.4rem;
         }
         .navbar-brand { font-weight: bold; font-size: 1.05rem; }
+        .version-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            vertical-align: middle;
+            margin-left: 0.35rem;
+            opacity: 0.9;
+            letter-spacing: 0.02em;
+        }
         .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
 
-        /* 본문: 화면 높이 꽉 채우고 리스트만 스크롤 */
         .app-main {
             flex: 1 1 auto;
             min-height: 0;
@@ -83,53 +90,29 @@
             padding: 0.55rem 0.55rem;
             letter-spacing: -0.02em;
         }
-        .table th.sortable {
-            cursor: pointer;
-        }
-        .table th.sortable:hover {
-            background-color: #1a1a1a !important;
-        }
+        .table th.sortable { cursor: pointer; }
+        .table th.sortable:hover { background-color: #1a1a1a !important; }
         .table td {
             font-size: 0.95rem;
             padding: 0.5rem 0.55rem;
         }
-        /* 삼각형 정렬 토글: ▲ / ▼ 교차 표시 */
-        .sort-arrows {
-            display: inline-flex;
-            flex-direction: column;
-            line-height: 0.55;
+
+        /* 정렬: 큰 삼각형 하나만 */
+        .sort-arrow {
+            display: inline-block;
             margin-left: 4px;
+            font-size: 0.85rem;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.4);
             vertical-align: middle;
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.35);
         }
-        .sort-arrows .arrow-up,
-        .sort-arrows .arrow-down {
-            transition: color 0.15s;
-        }
-        .table th.sorted-asc .sort-arrows .arrow-up {
-            color: #fff;
-        }
-        .table th.sorted-desc .sort-arrows .arrow-down {
+        .table th.sorted-asc .sort-arrow,
+        .table th.sorted-desc .sort-arrow {
             color: #fff;
         }
         .table th.sorted-asc,
         .table th.sorted-desc {
             background-color: #0b5ed7 !important;
-        }
-
-        .badge-status { font-size: 0.85rem; padding: 0.3em 0.55em; }
-        .ellipsis {
-            max-width: 160px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .ellipsis-short {
-            max-width: 120px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .inline-select {
@@ -140,7 +123,42 @@
             cursor: pointer;
         }
 
-        /* 메모 영역 넓게 */
+        /* 최종결과 색상: 진행 중=녹, 등록포기=빨, 등록=노 */
+        .result-select.result-ing {
+            background-color: #d1e7dd;
+            border-color: #a3cfbb;
+            color: #0f5132;
+            font-weight: 600;
+        }
+        .result-select.result-quit {
+            background-color: #f8d7da;
+            border-color: #f1aeb5;
+            color: #842029;
+            font-weight: 600;
+        }
+        .result-select.result-done {
+            background-color: #fff3cd;
+            border-color: #ffe69c;
+            color: #664d03;
+            font-weight: 600;
+        }
+
+        /* 추천인 색상 */
+        .manager-chip {
+            display: inline-block;
+            padding: 0.15em 0.5em;
+            border-radius: 0.35rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mgr-c0 { background: #d1e7dd; color: #0f5132; } /* 녹색 */
+        .mgr-c1 { background: #fff3cd; color: #664d03; } /* 노랑 */
+        .mgr-c2 { background: #cfe2ff; color: #084298; } /* 남색 계열 */
+        .mgr-c3 { background: #cff4fc; color: #055160; } /* 하늘색 */
+
         .memo-cell {
             max-width: 280px;
             min-width: 160px;
@@ -178,6 +196,31 @@
             font-style: italic;
         }
 
+        /* 모달 스크롤 수정: body overflow:hidden 환경에서도 동작 */
+        .modal {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        .modal-dialog {
+            margin: 0.5rem auto;
+            max-height: calc(100dvh - 1rem);
+        }
+        .modal-dialog-scrollable {
+            max-height: calc(100dvh - 1rem);
+        }
+        .modal-dialog-scrollable .modal-content {
+            max-height: calc(100dvh - 1rem);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
         @media (max-width: 768px) {
             .navbar-text { display: none; }
             .app-main { padding: 0.4rem 0.35rem 0.3rem; }
@@ -186,6 +229,10 @@
             .inline-select { min-width: 105px; font-size: 0.82rem; }
             .memo-cell { max-width: 220px; min-width: 140px; }
             .table { min-width: 720px; }
+            .modal-dialog {
+                margin: 0.35rem;
+                max-width: calc(100% - 0.7rem);
+            }
         }
 
         .table-responsive::-webkit-scrollbar {
@@ -202,13 +249,15 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid px-2 px-md-3">
-            <a class="navbar-brand" href="#"><i class="fas fa-users-cog me-2"></i>팀 리크루팅 DB</a>
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-users-cog me-2"></i>팀 리크루팅 DB
+                <span class="badge bg-light text-primary version-badge">v0.2</span>
+            </a>
             <span class="navbar-text text-light d-none d-md-inline">어디서나 편하게 기록하고 조회하는 리크루팅 관리 시스템</span>
         </div>
     </nav>
 
     <div class="app-main">
-        <!-- 등록 버튼 + 검색: 한 줄 반반 -->
         <div class="top-actions">
             <div class="row g-2 align-items-center">
                 <div class="col-6">
@@ -237,40 +286,27 @@
                                 <th>이름</th>
                                 <th>연락처</th>
                                 <th class="sortable" onclick="sortTable('contact_date')">
-                                    접촉일
-                                    <span class="sort-arrows" aria-hidden="true">
-                                        <span class="arrow-up">▲</span>
-                                        <span class="arrow-down">▼</span>
-                                    </span>
+                                    접촉일 <span class="sort-arrow" data-col="contact_date">▼</span>
                                 </th>
                                 <th class="sortable" onclick="sortTable('manager')">
-                                    추천인
-                                    <span class="sort-arrows" aria-hidden="true">
-                                        <span class="arrow-up">▲</span>
-                                        <span class="arrow-down">▼</span>
-                                    </span>
+                                    추천인 <span class="sort-arrow" data-col="manager">▼</span>
                                 </th>
                                 <th>진행단계</th>
                                 <th class="sortable" onclick="sortTable('result')">
-                                    최종결과
-                                    <span class="sort-arrows" aria-hidden="true">
-                                        <span class="arrow-up">▲</span>
-                                        <span class="arrow-down">▼</span>
-                                    </span>
+                                    최종결과 <span class="sort-arrow" data-col="result">▼</span>
                                 </th>
                                 <th>메모</th>
                                 <th class="text-center" style="width:90px">관리</th>
                             </tr>
                         </thead>
-                        <tbody id="candidateTableBody">
-                        </tbody>
+                        <tbody id="candidateTableBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Candidate Modal (Add / Full Edit) -->
+    <!-- Candidate Modal -->
     <div class="modal fade" id="candidateModal" tabindex="-1" aria-labelledby="candidateModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
@@ -281,7 +317,6 @@
                     </div>
                     <div class="modal-body">
                         <input type="hidden" id="candidateId">
-
                         <div class="mb-3">
                             <label for="name" class="form-label">이름 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" required>
@@ -334,7 +369,7 @@
         </div>
     </div>
 
-    <!-- Memo-only Modal -->
+    <!-- Memo Modal -->
     <div class="modal fade" id="memoModal" tabindex="-1" aria-labelledby="memoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
@@ -372,6 +407,7 @@
 
         const STATUS_OPTIONS = ['포지션 수락', '잡페어 참석', 'TS 진행', '교육 입과', '등록'];
         const RESULT_OPTIONS = ['진행 중', '등록', '등록포기'];
+        const APP_VERSION = 'v0.2';
 
         document.addEventListener('DOMContentLoaded', () => {
             modalInstance = new bootstrap.Modal(document.getElementById('candidateModal'));
@@ -404,7 +440,6 @@
             return data.sort((a, b) => {
                 let aVal = a[currentSortColumn];
                 let bVal = b[currentSortColumn];
-
                 if (aVal === null || aVal === undefined || aVal === '') aVal = '';
                 if (bVal === null || bVal === undefined || bVal === '') bVal = '';
 
@@ -413,11 +448,9 @@
                     const dateB = bVal ? new Date(bVal) : new Date(0);
                     return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
                 }
-
                 if (currentSortColumn === 'id') {
                     return currentSortDirection === 'asc' ? a.id - b.id : b.id - a.id;
                 }
-
                 const strA = String(aVal).toLowerCase();
                 const strB = String(bVal).toLowerCase();
                 if (strA < strB) return currentSortDirection === 'asc' ? -1 : 1;
@@ -426,7 +459,6 @@
             });
         }
 
-        /** # 클릭: 수정 최신순(기본) */
         function sortByDefault() {
             currentSortColumn = 'updated_at';
             currentSortDirection = 'desc';
@@ -447,17 +479,20 @@
             document.querySelectorAll('thead th').forEach(th => {
                 th.classList.remove('sorted-asc', 'sorted-desc');
             });
-            const map = {
-                contact_date: 3,
-                manager: 4,
-                result: 6
-            };
+            document.querySelectorAll('.sort-arrow').forEach(el => {
+                el.textContent = '▼';
+                el.style.color = '';
+            });
+            const map = { contact_date: 3, manager: 4, result: 6 };
             const headers = document.querySelectorAll('thead th');
             const idx = map[currentSortColumn];
             if (idx !== undefined && headers[idx]) {
-                headers[idx].classList.add(
-                    currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc'
-                );
+                const cls = currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc';
+                headers[idx].classList.add(cls);
+                const arrow = headers[idx].querySelector('.sort-arrow');
+                if (arrow) {
+                    arrow.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+                }
             }
         }
 
@@ -465,6 +500,21 @@
             return options.map(opt =>
                 `<option value="${escapeHtml(opt)}" ${opt === selectedValue ? 'selected' : ''}>${escapeHtml(opt)}</option>`
             ).join('');
+        }
+
+        function resultClass(result) {
+            if (result === '진행 중') return 'result-ing';
+            if (result === '등록포기') return 'result-quit';
+            if (result === '등록') return 'result-done';
+            return '';
+        }
+
+        /** 추천인 이름 → 고정 색상 (녹/노/남/하늘) */
+        function managerColorClass(name) {
+            if (!name) return 'mgr-c0';
+            let h = 0;
+            for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+            return 'mgr-c' + (h % 4);
         }
 
         function renderTable(data) {
@@ -482,6 +532,11 @@
                     ? escapeHtml(memoText.split('\n')[0].slice(0, 55) + (memoText.length > 55 ? '…' : ''))
                     : '메모 없음';
                 const memoClass = memoText ? 'memo-cell' : 'memo-cell empty';
+                const rClass = resultClass(c.result || '진행 중');
+                const mgr = c.manager || '';
+                const mgrHtml = mgr
+                    ? `<span class="manager-chip ${managerColorClass(mgr)}" title="${escapeHtml(mgr)}">${escapeHtml(mgr)}</span>`
+                    : '';
 
                 const statusSelect = `
                     <select class="form-select form-select-sm inline-select"
@@ -491,7 +546,7 @@
                     </select>`;
 
                 const resultSelect = `
-                    <select class="form-select form-select-sm inline-select"
+                    <select class="form-select form-select-sm inline-select result-select ${rClass}"
                             onchange="updateField(${c.id}, 'result', this.value)"
                             onclick="event.stopPropagation()">
                         ${buildSelectOptions(RESULT_OPTIONS, c.result || '진행 중')}
@@ -503,7 +558,7 @@
                     <td class="fw-bold">${escapeHtml(c.name)}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.contact || '')}">${escapeHtml(c.contact || '')}</td>
                     <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date ? c.contact_date.replace(/^20/, '') : '')}</td>
-                    <td class="ellipsis-short" title="${escapeHtml(c.manager || '')}">${escapeHtml(c.manager || '')}</td>
+                    <td>${mgrHtml}</td>
                     <td>${statusSelect}</td>
                     <td>${resultSelect}</td>
                     <td class="${memoClass}" title="${escapeHtml(memoText)}" onclick="openMemoModal(${c.id})">${memoPreview}</td>
@@ -592,7 +647,6 @@
         function openMemoModal(id) {
             const c = candidatesData.find(item => item.id === id);
             if (!c) return;
-
             document.getElementById('memoCandidateId').value = c.id;
             document.getElementById('memoCandidateName').textContent = c.name ? `후보자: ${c.name}` : '';
             document.getElementById('memoReadonlyDisplay').textContent = c.memo || '';
@@ -603,13 +657,11 @@
         function appendMemoWithDate(existingMemo, newText) {
             const trimmed = (newText || '').trim();
             if (!trimmed) return existingMemo || '';
-
             const now = new Date();
             const yy = String(now.getFullYear()).slice(-2);
             const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
-            const dateStr = `${yy}${mm}${dd}`;
-            const newEntry = `[${dateStr}] ${trimmed}`;
+            const newEntry = `[${yy}${mm}${dd}] ${trimmed}`;
             return existingMemo ? `${newEntry}\n\n${existingMemo}` : newEntry;
         }
 
@@ -617,13 +669,11 @@
             const id = document.getElementById('memoCandidateId').value;
             const c = candidatesData.find(item => item.id === Number(id) || item.id === id);
             if (!c) return;
-
             const newText = document.getElementById('memoNewInput').value;
             if (!newText.trim()) {
                 alert('추가할 메모를 입력해 주세요.');
                 return;
             }
-
             const finalMemo = appendMemoWithDate(c.memo || '', newText);
             const payload = {
                 name: c.name,
@@ -634,7 +684,6 @@
                 result: c.result || '',
                 memo: finalMemo
             };
-
             try {
                 const res = await fetch(`/api/candidates/${id}`, {
                     method: 'PUT',
@@ -658,15 +707,12 @@
             event.preventDefault();
             const id = document.getElementById('candidateId').value;
             const newMemoText = document.getElementById('memo').value.trim();
-
             let baseMemo = '';
             if (id) {
                 const c = candidatesData.find(item => item.id === Number(id) || item.id === id);
                 baseMemo = (c && c.memo) ? c.memo : '';
             }
-
             const finalMemo = appendMemoWithDate(baseMemo, newMemoText);
-
             const payload = {
                 name: document.getElementById('name').value,
                 contact: document.getElementById('contact').value,
@@ -676,7 +722,6 @@
                 result: document.getElementById('result').value,
                 memo: finalMemo
             };
-
             try {
                 let res;
                 if (id) {
@@ -692,7 +737,6 @@
                         body: JSON.stringify(payload)
                     });
                 }
-
                 const result = await res.json();
                 if (res.ok) {
                     modalInstance.hide();
@@ -708,14 +752,10 @@
 
         async function deleteCandidate(id) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
-
             try {
                 const res = await fetch(`/api/candidates/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    loadCandidates();
-                } else {
-                    alert('삭제 실패');
-                }
+                if (res.ok) loadCandidates();
+                else alert('삭제 실패');
             } catch (err) {
                 console.error('삭제 중 오류 발생:', err);
                 alert('삭제 중 오류가 발생했습니다.');
@@ -732,8 +772,7 @@
                        (c.status && c.status.toLowerCase().includes(keyword)) ||
                        (c.result && c.result.toLowerCase().includes(keyword));
             });
-            const sorted = sortData([...filtered]);
-            renderTable(sorted);
+            renderTable(sortData([...filtered]));
             updateSortHeaderUI();
         }
 

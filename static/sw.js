@@ -1,4 +1,4 @@
-const CACHE_NAME = 'recruit-db-pwa-v1';
+const CACHE_NAME = 'recruit-db-pwa-v0.2';
 const APP_SHELL = [
   '/',
   '/static/manifest.webmanifest',
