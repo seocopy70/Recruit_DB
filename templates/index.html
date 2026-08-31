@@ -154,19 +154,19 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* 추천인 색 (빨강 계열 제외, 12색) */
-        .mgr-c0  { background: #d1e7dd; color: #0f5132; } /* 초록 */
-        .mgr-c1  { background: #fff3cd; color: #664d03; } /* 노랑 */
-        .mgr-c2  { background: #cfe2ff; color: #084298; } /* 남색 */
-        .mgr-c3  { background: #cff4fc; color: #055160; } /* 하늘 */
-        .mgr-c4  { background: #e2d9f3; color: #432874; } /* 보라 */
-        .mgr-c5  { background: #d2f4ea; color: #0a5c4a; } /* 청록 */
-        .mgr-c6  { background: #ffe5d0; color: #9a3412; } /* 주황(비빨강) */
-        .mgr-c7  { background: #e7f5ff; color: #1c7ed6; } /* 밝은 파랑 */
-        .mgr-c8  { background: #f3f0ff; color: #5f3dc4; } /* 연보라 */
-        .mgr-c9  { background: #e6fcf5; color: #087f5b; } /* 민트 */
-        .mgr-c10 { background: #fff9db; color: #5c3d00; } /* 연한 황 */
-        .mgr-c11 { background: #edf2ff; color: #3b5bdb; } /* 인디고 */
+        /* 추천인 색 — 확실히 구분되는 12색 (빨강 계통 제외) */
+        .mgr-c0  { background: #198754; color: #fff; }       /* 진한 초록 */
+        .mgr-c1  { background: #ffc107; color: #212529; }    /* 노랑 */
+        .mgr-c2  { background: #0d6efd; color: #fff; }       /* 파랑 */
+        .mgr-c3  { background: #0dcaf0; color: #052c65; }    /* 시안 */
+        .mgr-c4  { background: #6f42c1; color: #fff; }       /* 보라 */
+        .mgr-c5  { background: #20c997; color: #052e24; }    /* 청록 */
+        .mgr-c6  { background: #fd7e14; color: #fff; }       /* 주황 */
+        .mgr-c7  { background: #6610f2; color: #fff; }       /* 인디고 */
+        .mgr-c8  { background: #343a40; color: #fff; }       /* 차콜 */
+        .mgr-c9  { background: #6c757d; color: #fff; }       /* 회색 */
+        .mgr-c10 { background: #0a58ca; color: #fff; }       /* 남색 */
+        .mgr-c11 { background: #087f5b; color: #fff; }       /* 딥 민트 */
 
         .memo-cell {
             max-width: 280px;
@@ -193,9 +193,9 @@
             padding: 0.75rem;
             white-space: pre-wrap;
             word-break: break-word;
-            max-height: 220px;
+            max-height: 120px;
             overflow-y: auto;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #495057;
             line-height: 1.5;
         }
@@ -336,47 +336,51 @@
                     </div>
                     <div class="modal-body">
                         <input type="hidden" id="candidateId">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">이름 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" required>
+                        <div class="mb-2">
+                            <label for="name" class="form-label mb-1">이름 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="name" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="contact" class="form-label">연락처</label>
-                            <input type="text" class="form-control" id="contact" placeholder="전화번호 또는 이메일">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="contact" class="form-label mb-1">연락처</label>
+                                <input type="text" class="form-control form-control-sm" id="contact" placeholder="전화/이메일">
+                            </div>
+                            <div class="col-6">
+                                <label for="contact_date" class="form-label mb-1">접촉일</label>
+                                <input type="date" class="form-control form-control-sm" id="contact_date">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="contact_date" class="form-label">접촉일</label>
-                            <input type="date" class="form-control" id="contact_date">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="manager" class="form-label mb-1">추천인</label>
+                                <input type="text" class="form-control form-control-sm" id="manager" placeholder="추천인">
+                            </div>
+                            <div class="col-6">
+                                <label for="status" class="form-label mb-1">진행단계</label>
+                                <select class="form-select form-select-sm" id="status">
+                                    <option value="포지션 수락">포지션 수락</option>
+                                    <option value="잡페어 참석">잡페어 참석</option>
+                                    <option value="TS 진행">TS 진행</option>
+                                    <option value="교육 입과">교육 입과</option>
+                                    <option value="등록">등록</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="manager" class="form-label">추천인</label>
-                            <input type="text" class="form-control" id="manager" placeholder="추천인 이름">
-                        </div>
-                        <div class="mb-3">
-                            <label for="status" class="form-label">진행단계</label>
-                            <select class="form-select" id="status">
-                                <option value="포지션 수락">포지션 수락</option>
-                                <option value="잡페어 참석">잡페어 참석</option>
-                                <option value="TS 진행">TS 진행</option>
-                                <option value="교육 입과">교육 입과</option>
-                                <option value="등록">등록</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="result" class="form-label">최종결과</label>
-                            <select class="form-select" id="result">
+                        <div class="mb-2">
+                            <label for="result" class="form-label mb-1">최종결과</label>
+                            <select class="form-select form-select-sm" id="result">
                                 <option value="진행 중">진행 중</option>
                                 <option value="등록">등록</option>
                                 <option value="등록포기">등록포기</option>
                             </select>
                         </div>
-                        <div class="mb-3" id="memoHistoryWrapper" style="display:none;">
-                            <label class="form-label">이전 메모 기록 <span class="text-muted" style="font-weight:normal;">(읽기 전용)</span></label>
+                        <div class="mb-2" id="memoHistoryWrapper" style="display:none;">
+                            <label class="form-label mb-1">이전 메모 <span class="text-muted" style="font-weight:normal;">(읽기 전용)</span></label>
                             <div class="memo-readonly" id="memoHistoryDisplay"></div>
                         </div>
-                        <div class="mb-3">
-                            <label for="memo" class="form-label">새 메모 추가</label>
-                            <textarea class="form-control" id="memo" rows="3" placeholder="특이사항, 면접 피드백 등을 입력하면 날짜와 함께 자동으로 기록됩니다."></textarea>
+                        <div class="mb-1">
+                            <label for="memo" class="form-label mb-1">새 메모 추가</label>
+                            <textarea class="form-control form-control-sm" id="memo" rows="2" placeholder="입력 시 날짜와 함께 자동 기록됩니다."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -528,16 +532,14 @@
             return '';
         }
 
-        /** 추천인 이름 → 고정 색상 (빨강 제외 12색, 유사 이름 충돌 최소화) */
+        /** 추천인 이름 → 고유 색상 (데이터에 등장하는 이름을 정렬해 순번 배정, 충돌 없음) */
         function managerColorClass(name) {
             if (!name) return 'mgr-c0';
-            let h = 0;
-            for (let i = 0; i < name.length; i++) {
-                h = (h + name.charCodeAt(i) * (i * 2 + 1) * 2654435761) >>> 0;
-            }
-            h ^= name.length * 0x9e3779b9;
-            h = (h ^ (h >>> 16)) >>> 0;
-            return 'mgr-c' + (h % 12);
+            const unique = [...new Set(
+                candidatesData.map(c => (c.manager || '').trim()).filter(Boolean)
+            )].sort((a, b) => a.localeCompare(b, 'ko'));
+            const idx = unique.indexOf(name.trim());
+            return 'mgr-c' + ((idx >= 0 ? idx : 0) % 12);
         }
 
         function renderTable(data) {
