@@ -75,7 +75,7 @@
             width: 100%;
         }
         .table {
-            min-width: 780px;
+            min-width: 720px;
             margin-bottom: 0;
             table-layout: auto;
         }
@@ -115,33 +115,104 @@
             background-color: #0b5ed7 !important;
         }
 
-        .inline-select {
-            min-width: 115px;
-            max-width: 145px;
-            font-size: 0.88rem;
-            padding: 0.25rem 0.4rem;
-            cursor: pointer;
+        /* 목록용 컴팩트 드롭다운 칩 */
+        .chip-dd {
+            position: relative;
+            display: inline-block;
+            max-width: 108px;
         }
-
-        /* 최종결과 색상: 진행 중=녹, 등록포기=빨, 등록=노 */
-        .result-select.result-ing {
-            background-color: #d1e7dd;
-            border-color: #a3cfbb;
+        .chip-dd > .btn {
+            width: 100%;
+            max-width: 108px;
+            padding: 0.2rem 0.45rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.3;
+            border-radius: 0.4rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: none;
+        }
+        .chip-dd > .btn::after {
+            margin-left: 0.25rem;
+            vertical-align: 0.1em;
+        }
+        .chip-dd .dropdown-menu {
+            min-width: 9.5rem;
+            padding: 0.35rem;
+            border: none;
+            border-radius: 0.6rem;
+            box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.15);
+            font-size: 0.85rem;
+        }
+        .chip-dd .dropdown-item {
+            border-radius: 0.4rem;
+            padding: 0.4rem 0.65rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .chip-dd .dropdown-item:hover,
+        .chip-dd .dropdown-item:focus {
+            background-color: #e9ecef;
+        }
+        .chip-dd .dropdown-item.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 700;
+        }
+        .chip-dd .dropdown-item .check {
+            width: 0.9rem;
+            color: #0d6efd;
+            visibility: hidden;
+        }
+        .chip-dd .dropdown-item.active .check {
+            visibility: visible;
+        }
+        /* 진행단계 칩 */
+        .chip-status {
+            background: #eef2f7;
+            border: 1px solid #cfd8e3;
+            color: #334155;
+        }
+        .chip-status:hover, .chip-status:focus, .chip-status.show {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+            color: #1e293b;
+        }
+        /* 최종결과 칩 색 */
+        .chip-result-ing {
+            background: #d1e7dd;
+            border: 1px solid #a3cfbb;
             color: #0f5132;
-            font-weight: 600;
         }
-        .result-select.result-quit {
-            background-color: #f8d7da;
-            border-color: #f1aeb5;
+        .chip-result-quit {
+            background: #f8d7da;
+            border: 1px solid #f1aeb5;
             color: #842029;
-            font-weight: 600;
         }
-        .result-select.result-done {
-            background-color: #fff3cd;
-            border-color: #ffe69c;
+        .chip-result-done {
+            background: #fff3cd;
+            border: 1px solid #ffe69c;
             color: #664d03;
-            font-weight: 600;
         }
+        .chip-result-ing:hover, .chip-result-ing.show,
+        .chip-result-quit:hover, .chip-result-quit.show,
+        .chip-result-done:hover, .chip-result-done.show {
+            filter: brightness(0.97);
+        }
+        /* 드롭다운 안 결과 색 점 */
+        .opt-dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .opt-dot-ing { background: #198754; }
+        .opt-dot-quit { background: #dc3545; }
+        .opt-dot-done { background: #ffc107; }
 
         /* 추천인 색상 */
         .manager-chip {
@@ -244,9 +315,10 @@
             .app-main { padding: 0.4rem 0.35rem 0.3rem; }
             .table th { font-size: 0.85rem; padding: 0.45rem 0.4rem; }
             .table td { font-size: 0.9rem; padding: 0.4rem 0.4rem; }
-            .inline-select { min-width: 105px; font-size: 0.82rem; }
+            .chip-dd { max-width: 100px; }
+            .chip-dd > .btn { max-width: 100px; font-size: 0.74rem; }
             .memo-cell { max-width: 220px; min-width: 140px; }
-            .table { min-width: 720px; }
+            .table { min-width: 680px; }
             .modal-dialog {
                 margin: 0.75rem auto;
                 max-width: 400px;
@@ -563,19 +635,36 @@
                     ? `<span class="manager-chip ${managerColorClass(mgr)}" title="${escapeHtml(mgr)}">${escapeHtml(mgr)}</span>`
                     : '';
 
+                const curStatus = c.status || '포지션 수락';
+                const curResult = c.result || '진행 중';
+                const statusItems = STATUS_OPTIONS.map(opt => {
+                    const active = opt === curStatus ? 'active' : '';
+                    return `<li><button type="button" class="dropdown-item ${active}" onclick="event.preventDefault(); event.stopPropagation(); updateField(${c.id}, 'status', '${opt}')">
+                        <span class="check"><i class="fas fa-check"></i></span>${escapeHtml(opt)}
+                    </button></li>`;
+                }).join('');
+                const resultItems = RESULT_OPTIONS.map(opt => {
+                    const active = opt === curResult ? 'active' : '';
+                    const dot = opt === '진행 중' ? 'opt-dot-ing' : (opt === '등록포기' ? 'opt-dot-quit' : 'opt-dot-done');
+                    return `<li><button type="button" class="dropdown-item ${active}" onclick="event.preventDefault(); event.stopPropagation(); updateField(${c.id}, 'result', '${opt}')">
+                        <span class="check"><i class="fas fa-check"></i></span>
+                        <span class="opt-dot ${dot}"></span>${escapeHtml(opt)}
+                    </button></li>`;
+                }).join('');
                 const statusSelect = `
-                    <select class="form-select form-select-sm inline-select"
-                            onchange="updateField(${c.id}, 'status', this.value)"
-                            onclick="event.stopPropagation()">
-                        ${buildSelectOptions(STATUS_OPTIONS, c.status || '포지션 수락')}
-                    </select>`;
-
+                    <div class="dropdown chip-dd" onclick="event.stopPropagation()">
+                        <button class="btn chip-status dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="${escapeHtml(curStatus)}">
+                            ${escapeHtml(curStatus)}
+                        </button>
+                        <ul class="dropdown-menu">${statusItems}</ul>
+                    </div>`;
                 const resultSelect = `
-                    <select class="form-select form-select-sm inline-select result-select ${rClass}"
-                            onchange="updateField(${c.id}, 'result', this.value)"
-                            onclick="event.stopPropagation()">
-                        ${buildSelectOptions(RESULT_OPTIONS, c.result || '진행 중')}
-                    </select>`;
+                    <div class="dropdown chip-dd" onclick="event.stopPropagation()">
+                        <button class="btn ${rClass.replace('result-', 'chip-result-')} dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="${escapeHtml(curResult)}">
+                            ${escapeHtml(curResult)}
+                        </button>
+                        <ul class="dropdown-menu">${resultItems}</ul>
+                    </div>`;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
