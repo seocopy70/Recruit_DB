@@ -219,7 +219,7 @@
             display: inline-block;
             padding: 0.15em 0.5em;
             border-radius: 0.35rem;
-            font-size: 0.88rem;
+            font-size: 0.78rem;
             font-weight: 600;
             max-width: 120px;
             overflow: hidden;
@@ -373,7 +373,7 @@
                     <table class="table table-hover table-striped mb-0 align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th class="sortable" style="width:44px" onclick="sortByDefault()" title="수정 최신순으로 정렬">#</th>
+                                <th class="sortable text-nowrap" style="width:52px" onclick="sortTable('updated_at')" title="수정 시각 기준 정렬"># <span class="sort-arrow" data-col="updated_at">▼</span></th>
                                 <th>이름</th>
                                 <th>연락처</th>
                                 <th class="sortable" onclick="sortTable('contact_date')">
@@ -565,7 +565,8 @@
                 currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
             } else {
                 currentSortColumn = column;
-                currentSortDirection = 'asc';
+                // 수정 시각(#)은 기본 최신순(desc), 나머지는 오름차순
+                currentSortDirection = (column === 'updated_at') ? 'desc' : 'asc';
             }
             sortAndRenderTable();
         }
@@ -578,7 +579,7 @@
                 el.textContent = '▼';
                 el.style.color = '';
             });
-            const map = { contact_date: 3, manager: 4, result: 6 };
+            const map = { updated_at: 0, contact_date: 3, manager: 4, result: 6 };
             const headers = document.querySelectorAll('thead th');
             const idx = map[currentSortColumn];
             if (idx !== undefined && headers[idx]) {
