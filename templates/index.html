@@ -329,24 +329,23 @@
             background-color: #212529;
         }
 
-        /* 고정 열: 기존 표의 줄무늬/호버 배경을 그대로 사용 */
+        /* 고정 열: 뒤쪽 열이 비치지 않도록 실제 불투명 배경을 지정 */
         .table tbody .id-cell,
         .table tbody .name-cell {
             overflow: hidden;
             text-overflow: ellipsis;
-            /* 고정 열은 뒤쪽 열이 비치지 않도록 항상 불투명한 배경 유지 */
-            background-color: var(--bs-table-bg);
+            background-color: #fff !important;
         }
         .table tbody .name-cell { font-size: 0.9rem; }
         .table tbody tr:nth-of-type(odd) .id-cell,
         .table tbody tr:nth-of-type(odd) .name-cell {
-            background-color: var(--bs-table-striped-bg);
+            background-color: #f1f3f5 !important;
         }
         .table tbody tr:hover .id-cell,
         .table tbody tr:hover .name-cell,
         .table tbody tr:nth-of-type(odd):hover .id-cell,
         .table tbody tr:nth-of-type(odd):hover .name-cell {
-            background-color: var(--bs-table-hover-bg);
+            background-color: #e9ecef !important;
         }
 
         /* 목록 헤더 고정 */
