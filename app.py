@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from backup import run_backup
 
 # 환경 변수 로드
 load_dotenv()
@@ -138,6 +139,22 @@ def delete_candidate(id):
         return jsonify({'message': '후보자가 삭제되었습니다.', 'changes': len(response.data)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/internal/weekly-backup', methods=['GET'])
+def weekly_backup():
+    token = request.headers.get('X-Backup-Token', '')
+    expected = os.getenv('BACKUP_TRIGGER_TOKEN', '')
+    if not expected or token != expected:
+        return ('', 404)
+
+    # 성공/실패 여부를 웹앱에 표시하지 않습니다.
+    # 외부 스케줄러는 이 엔드포인트를 주 1회 호출하기만 하면 됩니다.
+    try:
+        run_backup()
+    except Exception:
+        pass
+
+    return ('', 204)
 
 if __name__ == '__main__':
     init_db()
