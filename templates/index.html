@@ -399,7 +399,15 @@
             .table td { font-size: 0.9rem; padding: 0.4rem 0.4rem; }
             .chip-dd { max-width: 100px; }
             .chip-dd > .btn { max-width: 100px; font-size: 0.74rem; }
-            .memo-cell { max-width: 220px; min-width: 140px; }
+            /* 휴대폰: 연락처는 전화번호가 보일 정도로만 확보하고 긴 이메일은 ... 처리 */
+            .table th:nth-child(3),
+            .table td:nth-child(3) {
+                width: 105px;
+                min-width: 105px;
+                max-width: 105px;
+            }
+            /* 휴대폰: 메모 기본 표시 폭을 기존 220px에서 약 50% 확대 */
+            .memo-cell { max-width: 330px; min-width: 210px; }
             .table { min-width: 680px; }
             .modal-dialog {
                 margin: 0.75rem auto;
