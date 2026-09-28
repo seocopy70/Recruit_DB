@@ -240,7 +240,7 @@
         .mgr-c11 { background: #087f5b; color: #fff; }       /* 딥 민트 */
 
         .memo-cell {
-            max-width: 280px;
+            max-width: none;
             min-width: 160px;
             cursor: pointer;
             color: #0d6efd;
@@ -354,6 +354,37 @@
             top: 0;
             z-index: 3;
             box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+        }
+
+
+        /* 데스크톱: 내용 열은 필요한 만큼만 차지하고 남는 폭은 메모가 사용 */
+        @media (min-width: 769px) {
+            .table {
+                table-layout: fixed;
+                min-width: 0;
+                width: 100%;
+            }
+            .table th:nth-child(1),
+            .table td:nth-child(1) { width: 34px; }
+            .table th:nth-child(2),
+            .table td:nth-child(2) { width: 72px; }
+            .table th:nth-child(3),
+            .table td:nth-child(3) { width: 125px; }
+            .table th:nth-child(4),
+            .table td:nth-child(4) { width: 82px; }
+            .table th:nth-child(5),
+            .table td:nth-child(5) { width: 92px; }
+            .table th:nth-child(6),
+            .table td:nth-child(6) { width: 108px; }
+            .table th:nth-child(7),
+            .table td:nth-child(7) { width: 92px; }
+            .table th:nth-child(8),
+            .table td:nth-child(8) {
+                width: auto;
+                min-width: 160px;
+            }
+            .table th:nth-child(9),
+            .table td:nth-child(9) { width: 90px; }
         }
 
         @media (max-width: 768px) {
