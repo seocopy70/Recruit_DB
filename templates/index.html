@@ -329,28 +329,13 @@
             background-color: #212529;
         }
 
-
-        /* 고정 열은 표의 기존 줄무늬/호버 배경을 그대로 사용해 자연스럽게 표시 */
+        /* 고정 열: 기존 표의 줄무늬/호버 배경을 그대로 사용 */
         .table tbody .id-cell,
-        .table tbody .name-cell {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .table tbody .name-cell {
-            font-size: 0.9rem;
-        }
-        .table tbody tr:hover .id-cell,
-        .table tbody tr:hover .name-cell {
-            background-color: var(--bs-table-hover-bg);
-        }
-        .table tbody tr:nth-of-type(odd) .id-cell,
-        .table tbody tr:nth-of-type(odd) .name-cell {
-            background-color: var(--bs-table-striped-bg);
-        }
-        .table tbody tr:nth-of-type(odd):hover .id-cell,
-        .table tbody tr:nth-of-type(odd):hover .name-cell {
-            background-color: var(--bs-table-hover-bg);
-        }
+        .table tbody .name-cell { overflow: hidden; text-overflow: ellipsis; }
+        .table tbody .name-cell { font-size: 0.9rem; }
+        .table tbody tr:hover .id-cell, .table tbody tr:hover .name-cell { background-color: var(--bs-table-hover-bg); }
+        .table tbody tr:nth-of-type(odd) .id-cell, .table tbody tr:nth-of-type(odd) .name-cell { background-color: var(--bs-table-striped-bg); }
+        .table tbody tr:nth-of-type(odd):hover .id-cell, .table tbody tr:nth-of-type(odd):hover .name-cell { background-color: var(--bs-table-hover-bg); }
 
         /* 목록 헤더 고정 */
         .table thead th {
@@ -559,3 +544,397 @@
             memoModalInstance = new bootstrap.Modal(document.getElementById('memoModal'));
             loadCandidates();
         });
+
+        async function loadCandidates() {
+            try {
+                const res = await fetch('/api/candidates');
+                candidatesData = await res.json();
+                if (!Array.isArray(candidatesData)) {
+                    console.error('Unexpected response:', candidatesData);
+                    candidatesData = [];
+                }
+                sortAndRenderTable();
+            } catch (err) {
+                console.error('데이터를 불러오는데 실패했습니다:', err);
+                alert('데이터 로드 실패');
+            }
+        }
+
+        function sortAndRenderTable() {
+            const sortedData = sortData([...candidatesData]);
+            renderTable(sortedData);
+            updateSortHeaderUI();
+        }
+
+        function sortData(data) {
+            return data.sort((a, b) => {
+                let aVal = a[currentSortColumn];
+                let bVal = b[currentSortColumn];
+                if (aVal === null || aVal === undefined || aVal === '') aVal = '';
+                if (bVal === null || bVal === undefined || bVal === '') bVal = '';
+
+                if (currentSortColumn === 'contact_date' || currentSortColumn === 'updated_at') {
+                    const dateA = aVal ? new Date(aVal) : new Date(0);
+                    const dateB = bVal ? new Date(bVal) : new Date(0);
+                    return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+                }
+                if (currentSortColumn === 'id') {
+                    return currentSortDirection === 'asc' ? a.id - b.id : b.id - a.id;
+                }
+                const strA = String(aVal).toLowerCase();
+                const strB = String(bVal).toLowerCase();
+                if (strA < strB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (strA > strB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function sortByDefault() {
+            currentSortColumn = 'updated_at';
+            currentSortDirection = 'desc';
+            sortAndRenderTable();
+        }
+
+        function sortTable(column) {
+            if (currentSortColumn === column) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                // 수정 시각(#)은 기본 최신순(desc), 나머지는 오름차순
+                currentSortDirection = (column === 'updated_at') ? 'desc' : 'asc';
+            }
+            sortAndRenderTable();
+        }
+
+        function updateSortHeaderUI() {
+            document.querySelectorAll('thead th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            document.querySelectorAll('.sort-arrow').forEach(el => {
+                el.textContent = '▼';
+                el.style.color = '';
+            });
+            const map = { updated_at: 0, contact_date: 3, manager: 4, result: 6 };
+            const headers = document.querySelectorAll('thead th');
+            const idx = map[currentSortColumn];
+            if (idx !== undefined && headers[idx]) {
+                const cls = currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc';
+                headers[idx].classList.add(cls);
+                const arrow = headers[idx].querySelector('.sort-arrow');
+                if (arrow) {
+                    arrow.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+                }
+            }
+        }
+
+        function buildSelectOptions(options, selectedValue) {
+            return options.map(opt =>
+                `<option value="${escapeHtml(opt)}" ${opt === selectedValue ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+            ).join('');
+        }
+
+        function resultClass(result) {
+            if (result === '진행 중') return 'result-ing';
+            if (result === '등록포기') return 'result-quit';
+            if (result === '등록') return 'result-done';
+            return '';
+        }
+
+        /** 추천인 이름 → 고유 색상 (데이터에 등장하는 이름을 정렬해 순번 배정, 충돌 없음) */
+        function managerColorClass(name) {
+            if (!name) return 'mgr-c0';
+            const unique = [...new Set(
+                candidatesData.map(c => (c.manager || '').trim()).filter(Boolean)
+            )].sort((a, b) => a.localeCompare(b, 'ko'));
+            const idx = unique.indexOf(name.trim());
+            return 'mgr-c' + ((idx >= 0 ? idx : 0) % 12);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('candidateTableBody');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">등록된 후보자가 없습니다.</td></tr>';
+                return;
+            }
+
+            data.forEach((c, index) => {
+                const memoText = c.memo || '';
+                const memoPreview = memoText
+                    ? escapeHtml(memoText.split('\n')[0].slice(0, 55) + (memoText.length > 55 ? '…' : ''))
+                    : '메모 없음';
+                const memoClass = memoText ? 'memo-cell' : 'memo-cell empty';
+                const rClass = resultClass(c.result || '진행 중');
+                const mgr = c.manager || '';
+                const mgrHtml = mgr
+                    ? `<span class="manager-chip ${managerColorClass(mgr)}" title="${escapeHtml(mgr)}">${escapeHtml(mgr)}</span>`
+                    : '';
+
+                const curStatus = c.status || '포지션 수락';
+                const curResult = c.result || '진행 중';
+                const statusItems = STATUS_OPTIONS.map(opt => {
+                    const active = opt === curStatus ? 'active' : '';
+                    return `<li><button type="button" class="dropdown-item ${active}" onclick="event.preventDefault(); event.stopPropagation(); updateField(${c.id}, 'status', '${opt}')">
+                        <span class="check"><i class="fas fa-check"></i></span>${escapeHtml(opt)}
+                    </button></li>`;
+                }).join('');
+                const resultItems = RESULT_OPTIONS.map(opt => {
+                    const active = opt === curResult ? 'active' : '';
+                    const dot = opt === '진행 중' ? 'opt-dot-ing' : (opt === '등록포기' ? 'opt-dot-quit' : 'opt-dot-done');
+                    return `<li><button type="button" class="dropdown-item ${active}" onclick="event.preventDefault(); event.stopPropagation(); updateField(${c.id}, 'result', '${opt}')">
+                        <span class="check"><i class="fas fa-check"></i></span>
+                        <span class="opt-dot ${dot}"></span>${escapeHtml(opt)}
+                    </button></li>`;
+                }).join('');
+                const statusSelect = `
+                    <div class="dropdown chip-dd" onclick="event.stopPropagation()">
+                        <button class="btn chip-status dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="${escapeHtml(curStatus)}">
+                            ${escapeHtml(curStatus)}
+                        </button>
+                        <ul class="dropdown-menu">${statusItems}</ul>
+                    </div>`;
+                const resultSelect = `
+                    <div class="dropdown chip-dd" onclick="event.stopPropagation()">
+                        <button class="btn ${rClass.replace('result-', 'chip-result-')} dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="${escapeHtml(curResult)}">
+                            ${escapeHtml(curResult)}
+                        </button>
+                        <ul class="dropdown-menu">${resultItems}</ul>
+                    </div>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="id-cell text-center">${index + 1}</td>
+                    <td class="fw-bold name-cell" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</td>
+                    <td class="ellipsis-short" title="${escapeHtml(c.contact || '')}">${escapeHtml(c.contact || '')}</td>
+                    <td class="ellipsis-short" title="${escapeHtml(c.contact_date || '')}">${escapeHtml(c.contact_date ? c.contact_date.replace(/^20/, '') : '')}</td>
+                    <td>${mgrHtml}</td>
+                    <td>${statusSelect}</td>
+                    <td>${resultSelect}</td>
+                    <td class="${memoClass}" title="${escapeHtml(memoText)}" onclick="openMemoModal(${c.id})">${memoPreview}</td>
+                    <td class="text-center text-nowrap">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${c.id})" title="전체 수정">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate(${c.id})" title="삭제">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function updateField(id, field, value) {
+            const c = candidatesData.find(item => item.id === id);
+            if (!c) return;
+
+            const payload = {
+                name: c.name,
+                contact: c.contact || '',
+                contact_date: c.contact_date || '',
+                manager: c.manager || '',
+                status: field === 'status' ? value : (c.status || ''),
+                result: field === 'result' ? value : (c.result || ''),
+                memo: c.memo || ''
+            };
+
+            try {
+                const res = await fetch(`/api/candidates/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    c[field] = value;
+                    c.updated_at = new Date().toISOString();
+                    sortAndRenderTable();
+                } else {
+                    alert(result.error || '수정 실패');
+                    loadCandidates();
+                }
+            } catch (err) {
+                console.error('필드 수정 오류:', err);
+                alert('수정 중 오류가 발생했습니다.');
+                loadCandidates();
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('candidateForm').reset();
+            document.getElementById('candidateId').value = '';
+            document.getElementById('candidateModalLabel').innerText = '후보자 등록';
+            document.getElementById('memoHistoryWrapper').style.display = 'none';
+            document.getElementById('memoHistoryDisplay').textContent = '';
+            document.getElementById('memo').value = '';
+        }
+
+        function openEditModal(id) {
+            const c = candidatesData.find(item => item.id === id);
+            if (!c) return;
+
+            document.getElementById('candidateId').value = c.id;
+            document.getElementById('name').value = c.name || '';
+            document.getElementById('contact').value = c.contact || '';
+            document.getElementById('contact_date').value = c.contact_date || '';
+            document.getElementById('manager').value = c.manager || '';
+            document.getElementById('status').value = c.status || '포지션 수락';
+            document.getElementById('result').value = c.result || '진행 중';
+
+            if (c.memo) {
+                document.getElementById('memoHistoryWrapper').style.display = 'block';
+                document.getElementById('memoHistoryDisplay').textContent = c.memo;
+            } else {
+                document.getElementById('memoHistoryWrapper').style.display = 'none';
+                document.getElementById('memoHistoryDisplay').textContent = '';
+            }
+            document.getElementById('memo').value = '';
+            document.getElementById('candidateModalLabel').innerText = '후보자 수정';
+            modalInstance.show();
+        }
+
+        function openMemoModal(id) {
+            const c = candidatesData.find(item => item.id === id);
+            if (!c) return;
+            document.getElementById('memoCandidateId').value = c.id;
+            document.getElementById('memoCandidateName').textContent = c.name ? `후보자: ${c.name}` : '';
+            document.getElementById('memoReadonlyDisplay').textContent = c.memo || '';
+            document.getElementById('memoNewInput').value = '';
+            memoModalInstance.show();
+        }
+
+        function appendMemoWithDate(existingMemo, newText) {
+            const trimmed = (newText || '').trim();
+            if (!trimmed) return existingMemo || '';
+            const now = new Date();
+            const yy = String(now.getFullYear()).slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const newEntry = `[${yy}${mm}${dd}] ${trimmed}`;
+            return existingMemo ? `${newEntry}\n\n${existingMemo}` : newEntry;
+        }
+
+        async function saveMemoOnly() {
+            const id = document.getElementById('memoCandidateId').value;
+            const c = candidatesData.find(item => item.id === Number(id) || item.id === id);
+            if (!c) return;
+            const newText = document.getElementById('memoNewInput').value;
+            if (!newText.trim()) {
+                alert('추가할 메모를 입력해 주세요.');
+                return;
+            }
+            const finalMemo = appendMemoWithDate(c.memo || '', newText);
+            const payload = {
+                name: c.name,
+                contact: c.contact || '',
+                contact_date: c.contact_date || '',
+                manager: c.manager || '',
+                status: c.status || '',
+                result: c.result || '',
+                memo: finalMemo
+            };
+            try {
+                const res = await fetch(`/api/candidates/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    memoModalInstance.hide();
+                    loadCandidates();
+                } else {
+                    alert(result.error || '메모 저장 실패');
+                }
+            } catch (err) {
+                console.error('메모 저장 오류:', err);
+                alert('메모 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function saveCandidate(event) {
+            event.preventDefault();
+            const id = document.getElementById('candidateId').value;
+            const newMemoText = document.getElementById('memo').value.trim();
+            let baseMemo = '';
+            if (id) {
+                const c = candidatesData.find(item => item.id === Number(id) || item.id === id);
+                baseMemo = (c && c.memo) ? c.memo : '';
+            }
+            const finalMemo = appendMemoWithDate(baseMemo, newMemoText);
+            const payload = {
+                name: document.getElementById('name').value,
+                contact: document.getElementById('contact').value,
+                contact_date: document.getElementById('contact_date').value,
+                manager: document.getElementById('manager').value,
+                status: document.getElementById('status').value,
+                result: document.getElementById('result').value,
+                memo: finalMemo
+            };
+            try {
+                let res;
+                if (id) {
+                    res = await fetch(`/api/candidates/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    res = await fetch('/api/candidates', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                const result = await res.json();
+                if (res.ok) {
+                    modalInstance.hide();
+                    loadCandidates();
+                } else {
+                    alert(result.error || '저장 실패');
+                }
+            } catch (err) {
+                console.error('저장 중 오류 발생:', err);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function deleteCandidate(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            try {
+                const res = await fetch(`/api/candidates/${id}`, { method: 'DELETE' });
+                if (res.ok) loadCandidates();
+                else alert('삭제 실패');
+            } catch (err) {
+                console.error('삭제 중 오류 발생:', err);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        function filterCandidates() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = candidatesData.filter(c => {
+                return (c.name && c.name.toLowerCase().includes(keyword)) ||
+                       (c.contact && c.contact.toLowerCase().includes(keyword)) ||
+                       (c.manager && c.manager.toLowerCase().includes(keyword)) ||
+                       (c.memo && c.memo.toLowerCase().includes(keyword)) ||
+                       (c.status && c.status.toLowerCase().includes(keyword)) ||
+                       (c.result && c.result.toLowerCase().includes(keyword));
+            });
+            renderTable(sortData([...filtered]));
+            updateSortHeaderUI();
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
