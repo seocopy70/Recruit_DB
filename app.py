@@ -82,6 +82,20 @@ def add_candidate():
     memo = data.get('memo', '')
 
     try:
+        # 신규 등록 전에 동일 이름 후보자가 있는지 확인합니다.
+        duplicate_response = supabase.table('candidates') \
+            .select('*') \
+            .ilike('name', name.strip()) \
+            .limit(1) \
+            .execute()
+        if duplicate_response.data:
+            duplicate = duplicate_response.data[0]
+            return jsonify({
+                'duplicate': True,
+                'candidate': duplicate,
+                'message': f"'{duplicate.get('name', name)}' 이름의 후보자가 이미 등록되어 있습니다."
+            }), 409
+
         response = supabase.table('candidates') \
             .insert({
                 'name': name,
@@ -112,6 +126,21 @@ def update_candidate(id):
     memo = data.get('memo', '')
 
     try:
+        # 수정 시에는 자기 자신은 제외하고 동일 이름 후보자를 확인합니다.
+        duplicate_response = supabase.table('candidates') \
+            .select('*') \
+            .ilike('name', name.strip()) \
+            .neq('id', id) \
+            .limit(1) \
+            .execute()
+        if duplicate_response.data:
+            duplicate = duplicate_response.data[0]
+            return jsonify({
+                'duplicate': True,
+                'candidate': duplicate,
+                'message': f"'{duplicate.get('name', name)}' 이름의 후보자가 이미 등록되어 있습니다."
+            }), 409
+
         response = supabase.table('candidates') \
             .update({
                 'name': name,
