@@ -277,6 +277,11 @@
         }
 
         /* 모달: 배경(modal) 자체를 스크롤 — iOS/Android에서 가장 안정적 */
+        /* 중복 후보자 경고는 등록 모달보다 항상 앞에 표시 */
+        #duplicateCandidateModal {
+            z-index: 1065 !important;
+        }
+
         .modal {
             overflow-y: scroll !important;
             -webkit-overflow-scrolling: touch;
