@@ -756,7 +756,7 @@
                 const rClass = resultClass(c.result || '진행 중');
                 const mgr = c.manager || '';
                 const mgrHtml = mgr
-                    ? `<span class="manager-chip ${managerColorClass(mgr)}" title="${escapeHtml(mgr)}">${escapeHtml(mgr)}</span>`
+                    ? `<span class="manager-chip ${managerColorClass(mgr)}" title="추천인 '${escapeHtml(mgr)}' 검색" style="cursor:pointer" onclick="filterByManager(event, '${escapeHtml(mgr)}')">${escapeHtml(mgr)}</span>`
                     : '';
 
                 const curStatus = c.status || '포지션 수락';
@@ -1022,6 +1022,16 @@
                 console.error('삭제 중 오류 발생:', err);
                 alert('삭제 중 오류가 발생했습니다.');
             }
+        }
+
+        function filterByManager(event, managerName) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = managerName || '';
+            filterCandidates();
         }
 
         function filterCandidates() {
