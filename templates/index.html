@@ -530,7 +530,7 @@
                         <input type="hidden" id="candidateId">
                         <div class="mb-2">
                             <label for="name" class="form-label mb-1">이름 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-sm" id="name" required>
+                            <input type="text" class="form-control form-control-sm" id="name" required oninput="checkDuplicateNameInput()">
                         </div>
                         <div class="row g-2 mb-2">
                             <div class="col-6">
@@ -619,6 +619,7 @@
         let memoModalInstance = null;
         let duplicateModalInstance = null;
         let duplicateCandidate = null;
+        let duplicateNameWarningShownFor = '';
         let currentSortColumn = 'updated_at';
         let currentSortDirection = 'desc';
 
@@ -850,6 +851,7 @@
         }
 
         function openAddModal() {
+            duplicateNameWarningShownFor = '';
             document.getElementById('candidateForm').reset();
             document.getElementById('candidateId').value = '';
             document.getElementById('candidateModalLabel').innerText = '후보자 등록';
@@ -859,6 +861,7 @@
         }
 
         function openEditModal(id) {
+            duplicateNameWarningShownFor = '';
             const c = candidatesData.find(item => item.id === id);
             if (!c) return;
 
@@ -1010,6 +1013,24 @@
             setTimeout(() => {
                 openEditModal(duplicateCandidate.id);
             }, 200);
+        }
+
+        function checkDuplicateNameInput() {
+            const id = document.getElementById('candidateId').value;
+            if (id) return;
+            const name = document.getElementById('name').value.trim();
+            if (!name) { duplicateNameWarningShownFor = ''; return; }
+            const key = name.toLowerCase();
+            const duplicate = candidatesData.find(c => String(c.name || '').trim().toLowerCase() === key);
+            if (!duplicate || duplicateNameWarningShownFor === key) return;
+            duplicateNameWarningShownFor = key;
+            duplicateCandidate = duplicate;
+            document.getElementById('duplicateCandidateMessage').textContent =
+                "'" + duplicate.name + "' 이름의 후보자가 이미 등록되어 있습니다.";
+            document.getElementById('duplicateCandidateName').textContent = duplicate.name || '';
+            document.getElementById('duplicateCandidateContact').textContent = duplicate.contact || '없음';
+            document.getElementById('duplicateCandidateManager').textContent = duplicate.manager || '없음';
+            duplicateModalInstance.show();
         }
 
         async function deleteCandidate(id) {
