@@ -487,6 +487,36 @@
         </div>
     </div>
 
+    <!-- Duplicate Candidate Modal -->
+    <div class="modal fade" id="duplicateCandidateModal" tabindex="-1" aria-labelledby="duplicateCandidateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="duplicateCandidateModalLabel">
+                        <i class="fas fa-user-check me-2"></i>동일 이름 후보자 발견
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2" id="duplicateCandidateMessage"></p>
+                    <div class="border rounded p-2 bg-light">
+                        <div><strong>이름:</strong> <span id="duplicateCandidateName"></span></div>
+                        <div><strong>연락처:</strong> <span id="duplicateCandidateContact"></span></div>
+                        <div><strong>추천인:</strong> <span id="duplicateCandidateManager"></span></div>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">
+                        <strong>확인</strong>을 누르면 기존 후보자 수정창을 엽니다.<br>
+                        <strong>무시</strong>를 누르면 새 후보자 입력을 계속합니다.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">무시</button>
+                    <button type="button" class="btn btn-primary" onclick="openDuplicateCandidate()">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Candidate Modal -->
     <div class="modal fade" id="candidateModal" tabindex="-1" aria-labelledby="candidateModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable">
@@ -587,6 +617,8 @@
         let candidatesData = [];
         let modalInstance = null;
         let memoModalInstance = null;
+        let duplicateModalInstance = null;
+        let duplicateCandidate = null;
         let currentSortColumn = 'updated_at';
         let currentSortDirection = 'desc';
 
@@ -597,6 +629,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             modalInstance = new bootstrap.Modal(document.getElementById('candidateModal'));
             memoModalInstance = new bootstrap.Modal(document.getElementById('memoModal'));
+            duplicateModalInstance = new bootstrap.Modal(document.getElementById('duplicateCandidateModal'));
             loadCandidates();
         });
 
@@ -946,6 +979,18 @@
                 if (res.ok) {
                     modalInstance.hide();
                     loadCandidates();
+                } else if (res.status === 409 && result.duplicate && result.candidate) {
+                    // 신규 입력 내용은 그대로 유지한 채 중복 후보자를 안내합니다.
+                    duplicateCandidate = result.candidate;
+                    document.getElementById('duplicateCandidateMessage').textContent =
+                        result.message || '동일 이름의 후보자가 이미 등록되어 있습니다.';
+                    document.getElementById('duplicateCandidateName').textContent =
+                        result.candidate.name || '';
+                    document.getElementById('duplicateCandidateContact').textContent =
+                        result.candidate.contact || '없음';
+                    document.getElementById('duplicateCandidateManager').textContent =
+                        result.candidate.manager || '없음';
+                    duplicateModalInstance.show();
                 } else {
                     alert(result.error || '저장 실패');
                 }
@@ -953,6 +998,18 @@
                 console.error('저장 중 오류 발생:', err);
                 alert('저장 중 오류가 발생했습니다.');
             }
+        }
+
+        function openDuplicateCandidate() {
+            if (!duplicateCandidate || !duplicateCandidate.id) return;
+
+            duplicateModalInstance.hide();
+            modalInstance.hide();
+
+            // Bootstrap 모달 전환이 끝난 뒤 기존 후보자 수정창을 엽니다.
+            setTimeout(() => {
+                openEditModal(duplicateCandidate.id);
+            }, 200);
         }
 
         async function deleteCandidate(id) {
