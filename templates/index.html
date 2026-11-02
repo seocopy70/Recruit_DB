@@ -312,16 +312,16 @@
         .table td:nth-child(1) {
             position: sticky;
             left: 0;
-            width: 34px;
-            min-width: 34px;
-            max-width: 34px;
+            width: 46px;
+            min-width: 46px;
+            max-width: 46px;
             z-index: 4;
             box-shadow: 1px 0 0 rgba(0, 0, 0, 0.06);
         }
         .table th:nth-child(2),
         .table td:nth-child(2) {
             position: sticky;
-            left: 34px;
+            left: 46px;
             width: 72px;
             min-width: 72px;
             max-width: 72px;
@@ -375,7 +375,7 @@
                 width: 100%;
             }
             .table th:nth-child(1),
-            .table td:nth-child(1) { width: 34px; }
+            .table td:nth-child(1) { width: 46px; }
             .table th:nth-child(2),
             .table td:nth-child(2) { width: 72px; }
             .table th:nth-child(3),
@@ -395,6 +395,33 @@
             }
             .table th:nth-child(9),
             .table td:nth-child(9) { width: 90px; }
+        }
+
+        /* 폰 가로 / 작은 태블릿(769~1024px): 열은 내용 폭만큼만, 남는 폭은 메모가 사용 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .app-main { padding: 0.4rem 0.35rem 0.3rem; }
+            .table {
+                table-layout: auto;
+                min-width: 680px;
+                width: 100%;
+            }
+            .table th { font-size: 0.85rem; padding: 0.45rem 0.4rem; }
+            .table td { font-size: 0.9rem; padding: 0.4rem 0.4rem; }
+            .chip-dd { max-width: 100px; }
+            .chip-dd > .btn { max-width: 100px; font-size: 0.74rem; }
+            /* 번호·이름 이후 열은 내용 폭만큼만 차지 */
+            .table th:nth-child(n+3),
+            .table td:nth-child(n+3) { width: 1%; }
+            .table th:nth-child(3),
+            .table td:nth-child(3) {
+                width: 120px;
+                min-width: 120px;
+                max-width: 120px;
+            }
+            /* 메모: 남는 폭을 모두 사용하고 넘치면 ... 처리 */
+            .table th:nth-child(8),
+            .table td:nth-child(8) { width: auto; min-width: 210px; }
+            .table td.memo-cell { max-width: 0; }
         }
 
         @media (max-width: 768px) {
