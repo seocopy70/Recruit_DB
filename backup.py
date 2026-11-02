@@ -7,7 +7,8 @@ import zipfile
 from datetime import datetime, timezone
 from email.message import EmailMessage
 
-from supabase import create_client
+import psycopg2
+import psycopg2.extras
 
 
 TO_EMAIL = os.getenv("BACKUP_EMAIL_TO", "seongkyos@gmail.com")
@@ -15,29 +16,13 @@ SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
-def fetch_all_candidates(supabase):
-    rows = []
-    page_size = 1000
-    start = 0
-
-    while True:
-        response = (
-            supabase.table("candidates")
-            .select("*")
-            .range(start, start + page_size - 1)
-            .execute()
-        )
-        batch = response.data or []
-        rows.extend(batch)
-        if len(batch) < page_size:
-            break
-        start += page_size
-
-    return rows
+def fetch_all_candidates(conn):
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT * FROM candidates ORDER BY id")
+        return [dict(r) for r in cur.fetchall()]
 
 
 def make_backup_zip(rows, timestamp):
@@ -93,12 +78,15 @@ def send_email(attachment_bytes, filename, row_count, timestamp):
 
 
 def run_backup():
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        raise RuntimeError("SUPABASE_URL/SUPABASE_KEY are not configured.")
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not configured.")
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    rows = fetch_all_candidates(supabase)
+    conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+    try:
+        rows = fetch_all_candidates(conn)
+    finally:
+        conn.close()
     filename = f"recruit_db_backup_{timestamp}.zip"
     attachment = make_backup_zip(rows, timestamp)
     send_email(attachment, filename, len(rows), timestamp)

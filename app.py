@@ -1,7 +1,11 @@
 import os
 from datetime import datetime, timezone
+from contextlib import contextmanager
+from datetime import date
+import psycopg2
+import psycopg2.extras
+from psycopg2.pool import ThreadedConnectionPool
 from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
-from supabase import create_client, Client
 from dotenv import load_dotenv
 from backup import run_backup
 
@@ -10,10 +14,37 @@ load_dotenv()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Supabase 클라이언트 초기화
-supabase_url = os.getenv('SUPABASE_URL')
-supabase_key = os.getenv('SUPABASE_KEY')
-supabase: Client = create_client(supabase_url, supabase_key)
+# PostgreSQL 연결 풀 초기화 (Oracle VM의 recruit_db)
+# 예: DATABASE_URL=postgresql://USER:PASSWORD@10.0.0.50:5432/recruit_db
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    raise RuntimeError('DATABASE_URL 환경변수가 설정되지 않았습니다.')
+
+pool = ThreadedConnectionPool(1, 5, DATABASE_URL, connect_timeout=10)
+
+
+@contextmanager
+def get_cursor():
+    """풀에서 연결을 받아 커서를 제공하고, 성공 시 commit / 실패 시 rollback 합니다."""
+    conn = pool.getconn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            yield cur
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        pool.putconn(conn)
+
+
+def serialize(row):
+    """datetime/date 값을 프론트가 기대하는 문자열(ISO)로 변환합니다."""
+    out = {}
+    for k, v in row.items():
+        out[k] = v.isoformat() if isinstance(v, (datetime, date)) else v
+    return out
+
 
 # PWA 리소스는 웹 루트에서 제공해야 Service Worker가 사이트 전체를 제어할 수 있습니다.
 @app.route('/manifest.webmanifest')
@@ -44,12 +75,12 @@ def add_pwa_metadata(response):
     return response
 
 def init_db():
-    # Supabase는 자동으로 테이블을 생성하지 않으므로 수동으로 확인
     try:
-        supabase.table('candidates').select('*').limit(1).execute()
+        with get_cursor() as cur:
+            cur.execute('SELECT 1 FROM candidates LIMIT 1')
         print("✅ candidates 테이블이 존재합니다.")
     except Exception as e:
-        print(f"⚠️  candidates 테이블을 수동으로 생성하세요: {e}")
+        print(f"⚠️  candidates 테이블을 확인하세요: {e}")
 
 @app.route('/')
 def index():
@@ -58,14 +89,31 @@ def index():
 @app.route('/api/candidates', methods=['GET'])
 def get_candidates():
     try:
-        response = supabase.table('candidates') \
-            .select('*') \
-            .order('updated_at', desc=True) \
-            .execute()
-        candidates = response.data
-        return jsonify(candidates)
+        with get_cursor() as cur:
+            cur.execute('SELECT * FROM candidates ORDER BY updated_at DESC')
+            rows = cur.fetchall()
+        return jsonify([serialize(r) for r in rows])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+def find_duplicate(cur, name, exclude_id=None):
+    """대소문자 무시로 동일 이름 후보자를 찾습니다. (ILIKE의 %, _ 와일드카드 문제 회피)"""
+    if exclude_id is None:
+        cur.execute('SELECT * FROM candidates WHERE lower(name) = lower(%s) LIMIT 1', (name.strip(),))
+    else:
+        cur.execute('SELECT * FROM candidates WHERE lower(name) = lower(%s) AND id <> %s LIMIT 1',
+                    (name.strip(), exclude_id))
+    return cur.fetchone()
+
+
+def duplicate_response(duplicate, name):
+    return jsonify({
+        'duplicate': True,
+        'candidate': serialize(duplicate),
+        'message': f"'{duplicate.get('name', name)}' 이름의 후보자가 이미 등록되어 있습니다."
+    }), 409
+
 
 @app.route('/api/candidates', methods=['POST'])
 def add_candidate():
@@ -82,34 +130,22 @@ def add_candidate():
     memo = data.get('memo', '')
 
     try:
-        # 신규 등록 전에 동일 이름 후보자가 있는지 확인합니다.
-        duplicate_response = supabase.table('candidates') \
-            .select('*') \
-            .ilike('name', name.strip()) \
-            .limit(1) \
-            .execute()
-        if duplicate_response.data:
-            duplicate = duplicate_response.data[0]
-            return jsonify({
-                'duplicate': True,
-                'candidate': duplicate,
-                'message': f"'{duplicate.get('name', name)}' 이름의 후보자가 이미 등록되어 있습니다."
-            }), 409
+        with get_cursor() as cur:
+            # 신규 등록 전에 동일 이름 후보자가 있는지 확인합니다.
+            duplicate = find_duplicate(cur, name)
+            if duplicate:
+                return duplicate_response(duplicate, name)
 
-        response = supabase.table('candidates') \
-            .insert({
-                'name': name,
-                'contact': contact,
-                'contact_date': contact_date,
-                'manager': manager,
-                'status': status,
-                'result': result,
-                'memo': memo
-            }) \
-            .execute()
-        return jsonify({'id': response.data[0]['id'], 'message': '후보자가 성공적으로 등록되었습니다.'})
+            cur.execute(
+                '''INSERT INTO candidates (name, contact, contact_date, manager, status, result, memo)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id''',
+                (name, contact, contact_date, manager, status, result, memo)
+            )
+            new_id = cur.fetchone()['id']
+        return jsonify({'id': new_id, 'message': '후보자가 성공적으로 등록되었습니다.'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/candidates/<int:id>', methods=['PUT'])
 def update_candidate(id):
@@ -126,46 +162,33 @@ def update_candidate(id):
     memo = data.get('memo', '')
 
     try:
-        # 수정 시에는 자기 자신은 제외하고 동일 이름 후보자를 확인합니다.
-        duplicate_response = supabase.table('candidates') \
-            .select('*') \
-            .ilike('name', name.strip()) \
-            .neq('id', id) \
-            .limit(1) \
-            .execute()
-        if duplicate_response.data:
-            duplicate = duplicate_response.data[0]
-            return jsonify({
-                'duplicate': True,
-                'candidate': duplicate,
-                'message': f"'{duplicate.get('name', name)}' 이름의 후보자가 이미 등록되어 있습니다."
-            }), 409
+        with get_cursor() as cur:
+            # 수정 시에는 자기 자신은 제외하고 동일 이름 후보자를 확인합니다.
+            duplicate = find_duplicate(cur, name, exclude_id=id)
+            if duplicate:
+                return duplicate_response(duplicate, name)
 
-        response = supabase.table('candidates') \
-            .update({
-                'name': name,
-                'contact': contact,
-                'contact_date': contact_date,
-                'manager': manager,
-                'status': status,
-                'result': result,
-                'memo': memo,
-                'updated_at': datetime.now(timezone.utc).isoformat()
-            }) \
-            .eq('id', id) \
-            .execute()
-        return jsonify({'message': '후보자 정보가 수정되었습니다.', 'changes': len(response.data)})
+            cur.execute(
+                '''UPDATE candidates
+                   SET name=%s, contact=%s, contact_date=%s, manager=%s,
+                       status=%s, result=%s, memo=%s, updated_at=%s
+                   WHERE id=%s''',
+                (name, contact, contact_date, manager, status, result, memo,
+                 datetime.now(timezone.utc), id)
+            )
+            changes = cur.rowcount
+        return jsonify({'message': '후보자 정보가 수정되었습니다.', 'changes': changes})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/candidates/<int:id>', methods=['DELETE'])
 def delete_candidate(id):
     try:
-        response = supabase.table('candidates') \
-            .delete() \
-            .eq('id', id) \
-            .execute()
-        return jsonify({'message': '후보자가 삭제되었습니다.', 'changes': len(response.data)})
+        with get_cursor() as cur:
+            cur.execute('DELETE FROM candidates WHERE id = %s', (id,))
+            changes = cur.rowcount
+        return jsonify({'message': '후보자가 삭제되었습니다.', 'changes': changes})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -188,7 +211,7 @@ def weekly_backup():
 if __name__ == '__main__':
     init_db()
     print(f"🚀 서버 시작")
-    print(f"📊 Supabase 연결: {supabase_url}")
+    print("📊 PostgreSQL 연결 풀 준비 완료")
     
     port = int(os.environ.get('PORT', 3000))
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
