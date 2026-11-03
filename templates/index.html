@@ -315,6 +315,8 @@
             width: 46px;
             min-width: 46px;
             max-width: 46px;
+            padding-left: 0.3rem;
+            padding-right: 0.3rem;
             z-index: 4;
             box-shadow: 1px 0 0 rgba(0, 0, 0, 0.06);
         }
@@ -405,8 +407,8 @@
                 min-width: 680px;
                 width: 100%;
             }
-            .table th { font-size: 0.85rem; padding: 0.45rem 0.4rem; }
-            .table td { font-size: 0.9rem; padding: 0.4rem 0.4rem; }
+            .table th { font-size: 0.85rem; padding: 0.45rem 0.3rem; }
+            .table td { font-size: 0.9rem; padding: 0.4rem 0.3rem; }
             .chip-dd { max-width: 100px; }
             .chip-dd > .btn { max-width: 100px; font-size: 0.74rem; }
             /* 번호·이름 이후 열은 내용 폭만큼만 차지 */
@@ -420,8 +422,10 @@
             }
             /* 메모: 남는 폭을 모두 사용하고 넘치면 ... 처리 */
             .table th:nth-child(8),
-            .table td:nth-child(8) { width: auto; min-width: 210px; }
+            .table td:nth-child(8) { width: auto; min-width: 360px; }
             .table td.memo-cell { max-width: 0; }
+            .table td:nth-child(9) .btn { padding: 0.2rem 0.35rem; }
+            .table td:nth-child(9) .btn.me-1 { margin-right: 0.2rem !important; }
         }
 
         @media (max-width: 768px) {
@@ -464,7 +468,7 @@
         <div class="container-fluid px-2 px-md-3">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-users-cog me-2"></i>팀 리크루팅 DB
-                <span class="badge bg-light text-primary version-badge">v0.2</span>
+                <span class="badge bg-light text-primary version-badge">v0.3</span>
             </a>
             <span class="navbar-text text-light d-none d-md-inline">어디서나 편하게 기록하고 조회하는 리크루팅 관리 시스템</span>
         </div>
@@ -496,15 +500,21 @@
                         <thead class="table-dark">
                             <tr>
                                 <th class="sortable text-nowrap id-header" onclick="sortTable('updated_at')" title="수정 시각 기준 정렬"><span class="sort-arrow" data-col="updated_at">▼</span></th>
-                                <th>이름</th>
-                                <th>연락처</th>
+                                <th class="sortable" onclick="sortTable('name')">
+                                    이름 <span class="sort-arrow" data-col="name">▼</span>
+                                </th>
+                                <th class="sortable" onclick="sortTable('contact')">
+                                    연락처 <span class="sort-arrow" data-col="contact">▼</span>
+                                </th>
                                 <th class="sortable" onclick="sortTable('contact_date')">
                                     접촉일 <span class="sort-arrow" data-col="contact_date">▼</span>
                                 </th>
                                 <th class="sortable" onclick="sortTable('manager')">
                                     추천인 <span class="sort-arrow" data-col="manager">▼</span>
                                 </th>
-                                <th>진행단계</th>
+                                <th class="sortable" onclick="sortTable('status')">
+                                    진행단계 <span class="sort-arrow" data-col="status">▼</span>
+                                </th>
                                 <th class="sortable" onclick="sortTable('result')">
                                     최종결과 <span class="sort-arrow" data-col="result">▼</span>
                                 </th>
@@ -657,7 +667,7 @@
 
         const STATUS_OPTIONS = ['포지션 수락', '잡페어 참석', 'TS 진행', '교육 입과', '등록'];
         const RESULT_OPTIONS = ['진행 중', '등록', '등록포기'];
-        const APP_VERSION = 'v0.2';
+        const APP_VERSION = 'v0.3';
 
         document.addEventListener('DOMContentLoaded', () => {
             modalInstance = new bootstrap.Modal(document.getElementById('candidateModal'));
@@ -699,6 +709,15 @@
                     const dateB = bVal ? new Date(bVal) : new Date(0);
                     return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
                 }
+                if (currentSortColumn === 'status') {
+                    // 가나다순이 아니라 진행 순서(포지션 수락 → … → 등록) 기준
+                    const rank = c => {
+                        const i = STATUS_OPTIONS.indexOf(c.status || '포지션 수락');
+                        return i === -1 ? STATUS_OPTIONS.length : i;
+                    };
+                    const diff = rank(a) - rank(b);
+                    return currentSortDirection === 'asc' ? diff : -diff;
+                }
                 if (currentSortColumn === 'id') {
                     return currentSortDirection === 'asc' ? a.id - b.id : b.id - a.id;
                 }
@@ -735,7 +754,7 @@
                 el.textContent = '▼';
                 el.style.color = '';
             });
-            const map = { updated_at: 0, contact_date: 3, manager: 4, result: 6 };
+            const map = { updated_at: 0, name: 1, contact: 2, contact_date: 3, manager: 4, status: 5, result: 6 };
             const headers = document.querySelectorAll('thead th');
             const idx = map[currentSortColumn];
             if (idx !== undefined && headers[idx]) {
